@@ -1,0 +1,19 @@
+{
+  "name": "excelbus",
+  "version": "0.1.0",
+  "description": "Excelbus é um plugin que tem o poder de ler planilhas excel e transformar aqueles dados em publicações no wordpress.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bus",
+    "onibus",
+    "excel",
+    "read",
+    "data",
+    "excel"
+  ],
+  "author": "JA93",
+  "license": "ISC"
+}
