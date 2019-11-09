@@ -48,21 +48,81 @@ class Excelbus {
     // Add menu page
     public function create_menu_admin_panel()
     {
-        $page_title     = "Excelbus Plugin";
-        $menu_title     = "Excelbus";
-        $capability     = "author";
-        $menu_slug      = "excelbus-plugin";
-        $icon_url       = "dashicons-clock";
-        $position       = 2;
-
-        // add_menu_page($page_title, $menu_title, $capability, $menu_slug, 'Excelbus::excelbus_render_page', $icon_url, $position);
         add_menu_page('Excelbus Plugin', 'Excelbus', 'administrator', 'excelbus-plugin', 'Excelbus::excelbus_render_page', 'dashicons-clock', 65);
+    }
+
+    /**
+     * Function allowed_file_types(); - Verifica se o arquivo enviado é válido para a leitura e extração. Se for retorna true, caso não seja retorna false
+     * @param $fileType; - Tipo do arquivo enviado no upload
+     *  */    
+    public function allowed_file_types($fileType)
+    {
+        // [Arr] tipos de arquivos aceitos
+        // https://stackoverflow.com/questions/11832930/html-input-file-accept-attribute-file-type-csv
+        $allowed_file_types = array('.csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        if (in_array($fileType, $allowed_file_types))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     // Render excelbus html page
     public function excelbus_render_page()
     {
         echo '<h3>'. __('Excelbus Plugin - Extraia dados de uma planilha e transforme em publicações', 'TEXT_DOMAIN') .'</h3>';
+
+
+        if (isset($_FILES[PREFIX . '_file_upload']))
+        {
+            // Diretório de upload atual
+            $dir = '../wp-content/uploads' . wp_upload_dir()['subdir'];
+
+            // Enviar o arquivo para o diretório de upload
+            $target_file = $dir . '/' . basename($_FILES[PREFIX . '_file_upload']['name']);
+            move_uploaded_file($_FILES[PREFIX . '_file_upload']['tmp_name'], $target_file);
+            $file_name = basename($_FILES[PREFIX . '_file_upload']['name']);
+            
+            // Iniciar Objeto
+            $PHPExcelReader = new PHPExcel_Reader_Excel5();
+            $PHPExcelReader->setReadDataOnly(true);
+            $objExcel = $PHPExcelReader->load($target_file);
+
+            // Pegar total de colunas
+            $colunas = $objExcel->setActiveSheetIndex(0)->getHighestColumn();
+            $total_colunas = PHPExcel_Cell::columnIndexFromString($colunas);
+
+            // Total de linhas
+            $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
+
+            echo '<table border="1">';
+
+            for ($i = 0; $i <= $total_linhas; $i++)
+            {
+                echo '<tr>';
+
+                for ($j = 0; $j <= $total_colunas; $j++)
+                {
+                    echo '<th>'. utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow($j, $i)->getValue()) .'</th>';
+                }
+
+            }
+
+            echo '</table>';
+
+        }
+
+        echo '
+            <form style="margin-top: 30px" action="/wp-admin/admin.php?page=excelbus-plugin" enctype="multipart/form-data" method="post">
+                <label for="" class="">Selecione a planilha excel:</label><br>
+                <input type="file" name="'. PREFIX . '_file_upload" id="'. PREFIX .'_file_upload_id" class=""><br>
+                <input type="submit" name="'. PREFIX .'_submit_btn" id="'. PREFIX .'_submit_btn_id" class="" value="Fazer Upload do arquivo">
+            </form>
+        ';
     }
 }
 
