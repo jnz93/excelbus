@@ -99,20 +99,54 @@ class Excelbus {
             // Total de linhas
             $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
 
-            echo '<table border="1">';
+            $arr_bus_prefix = array();
 
-            for ($i = 0; $i <= $total_linhas; $i++)
+            for ($i = 2; $i <= $total_linhas; $i++)
             {
-                echo '<tr>';
+                $trecho         = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(0, $i));
+                $prefixo        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(1, $i));
+                $servico        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(2, $i));
+                $dia_semana     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(3, $i));
+                $hora_saida     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(4, $i));
+                $origem_id      = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(5, $i));
+                $origem_nome    = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(6, $i));
+                $destino_id     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(7, $i));
+                $destino_nome   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(8, $i));
+                $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
 
-                for ($j = 0; $j <= $total_colunas; $j++)
+
+                if (!in_array($prefixo, $arr_bus_prefix))
                 {
-                    echo '<th>'. utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow($j, $i)->getValue()) .'</th>';
+                    $arr_bus_prefix[] = $prefixo;
                 }
-
+                
+                if ($arr_bus_prefix[$prefixo][0] != $dia_semana)
+                {
+                    $arr_bus_prefix[$prefixo][0] = $dia_semana;
+                }
+                
+                $arr_bus_prefix[$prefixo][$dia_semana]['trechos'][] = $trecho;
+                
+                if ($sentido == "I")
+                {
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+                }
+                else
+                {
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+                }
             }
-
-            echo '</table>';
+            // echo '<pre>';
+            // print_r($arr_bus_prefix);
+            // echo '</pre>';
 
         }
 
