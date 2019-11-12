@@ -71,6 +71,72 @@ class Excelbus {
         }
     }
 
+
+    /**
+     * Function extract_read_and_treatment_of_data($obj); - Recebe um objeto excel para leitura, extração e tratamento dos dados, ao final retorna um vetor
+     * @param $obj - Um objeto excel retornado da classe PHPExcelReader
+     * @return vetor - UM vetor com todos os dados extraídos e armazenados
+     */
+    public function extract_read_and_treatment_of_data($objExcel)
+    {
+        // Pegar total de colunas
+        $colunas = $objExcel->setActiveSheetIndex(0)->getHighestColumn();
+        $total_colunas = PHPExcel_Cell::columnIndexFromString($colunas);
+
+        // Total de linhas
+        $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
+
+        $arr_bus_for_excel = array();
+
+        for ($i = 2; $i <= $total_linhas; $i++)
+        {
+            $trecho         = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(0, $i));
+            $prefixo        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(1, $i));
+            $servico        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(2, $i));
+            $dia_semana     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(3, $i));
+            $hora_saida     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(4, $i));
+            $origem_id      = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(5, $i));
+            $origem_nome    = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(6, $i));
+            $destino_id     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(7, $i));
+            $destino_nome   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(8, $i));
+            $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
+
+
+            if (!in_array($prefixo, $arr_bus_for_excel))
+            {
+                $arr_bus_for_excel[] = $prefixo;
+            }
+            
+            if ($arr_bus_for_excel[$prefixo][0] != $dia_semana)
+            {
+                $arr_bus_for_excel[$prefixo][0] = $dia_semana;
+            }
+            
+            $arr_bus_for_excel[$prefixo][$dia_semana]['trechos'][] = $trecho;
+            
+            if ($sentido == "I")
+            {
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+            }
+            else
+            {
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+            }
+        }
+        // echo '<pre>';
+        // print_r($arr_bus_for_excel);
+        // echo '</pre>';
+        return $arr_bus_for_excel;
+    }
+
     // Render excelbus html page
     public function excelbus_render_page()
     {
@@ -92,61 +158,7 @@ class Excelbus {
             $PHPExcelReader->setReadDataOnly(true);
             $objExcel = $PHPExcelReader->load($target_file);
 
-            // Pegar total de colunas
-            $colunas = $objExcel->setActiveSheetIndex(0)->getHighestColumn();
-            $total_colunas = PHPExcel_Cell::columnIndexFromString($colunas);
-
-            // Total de linhas
-            $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
-
-            $arr_bus_prefix = array();
-
-            for ($i = 2; $i <= $total_linhas; $i++)
-            {
-                $trecho         = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(0, $i));
-                $prefixo        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(1, $i));
-                $servico        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(2, $i));
-                $dia_semana     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(3, $i));
-                $hora_saida     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(4, $i));
-                $origem_id      = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(5, $i));
-                $origem_nome    = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(6, $i));
-                $destino_id     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(7, $i));
-                $destino_nome   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(8, $i));
-                $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
-
-
-                if (!in_array($prefixo, $arr_bus_prefix))
-                {
-                    $arr_bus_prefix[] = $prefixo;
-                }
-                
-                if ($arr_bus_prefix[$prefixo][0] != $dia_semana)
-                {
-                    $arr_bus_prefix[$prefixo][0] = $dia_semana;
-                }
-                
-                $arr_bus_prefix[$prefixo][$dia_semana]['trechos'][] = $trecho;
-                
-                if ($sentido == "I")
-                {
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
-                }
-                else
-                {
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-                    $arr_bus_prefix[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
-                }
-            }
-            // echo '<pre>';
-            // print_r($arr_bus_prefix);
-            // echo '</pre>';
+            Excelbus::extract_read_and_treatment_of_data($objExcel);
 
         }
 
