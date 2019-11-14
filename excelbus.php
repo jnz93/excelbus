@@ -116,19 +116,19 @@ class Excelbus {
             
             if ($sentido == "I")
             {
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
                 $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
             }
             else
             {
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id'] = $origem_id;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome'] = $origem_nome;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id'] = $destino_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
                 $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][] = $hora_saida;
+                $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
             }
         }
         // echo '<pre>';
@@ -137,6 +137,68 @@ class Excelbus {
         return $arr_bus_for_excel;
     }
 
+
+    /**
+     * Function compare_and_return_result - Recebe um vetor de onde extrai os prefixos vindos do excel para comparação com os prefixos já registrados
+     * no wordpress. Ao encontrar prefixos iguais retorna, em forma de um array, os ids para update. Retorna também um array de prefixos para novas
+     * publicações.
+     * @param vetor - Vetor com os dados do excel
+     */
+    public function compare_and_return_result($obj)
+    {
+        // Tratamento dos prefixos do excel e transformação em array
+        $string_prefix_of_excel = '';
+        for($i = 0; $i <= count($obj); $i++)
+        {
+            if (isset($obj[$i]))
+            {
+                $string_prefix_of_excel .= $obj[$i] . ',';
+            }
+        }
+        $arr_prefix_of_excel = explode(',', $string_prefix_of_excel);
+        
+        
+        // Fase 2
+        // Pegar todos as publicações
+        $args = array(
+            'post_type'         => 'post',
+            'post_status'       => 'publish',
+            'posts_per_page'    => '-1'
+        );
+        $get_posts = new WP_Query($args);
+        
+        // Loop para encontrar Prefixos(onibus) já cadastrados
+        if ($get_posts->have_posts())
+        {
+            while ($get_posts->have_posts())
+            {
+                $get_posts->the_post();
+
+                $post_id            = get_the_ID();
+                $title              = get_the_title();
+                $meta_prefix        = get_post_meta($post_id, 'wbtm_bus_no', false);
+
+                // Array meta -> String prefixos
+                $string_prefix = '';
+                foreach($meta_prefix as $prefix)
+                {
+                    $string_prefix .= $prefix;
+                }
+                // echo $string_prefix . '<br>';
+                $arr_prefix_registered = explode(',', $string_prefix);
+
+                if(in_array(trim($string_prefix), $arr_prefix_of_excel))
+                {
+                    // echo $string_prefix . ' ID: ' . $post_id . '<br>';
+                    $ids_for_update .= $post_id . ',';
+                    $prefix_for_update .= $string_prefix . ',';
+                }
+            }
+            echo $ids_for_update;
+            echo '<br>';
+            echo $prefix_for_update;
+        }
+    }
     // Render excelbus html page
     public function excelbus_render_page()
     {
@@ -158,7 +220,9 @@ class Excelbus {
             $PHPExcelReader->setReadDataOnly(true);
             $objExcel = $PHPExcelReader->load($target_file);
 
-            Excelbus::extract_read_and_treatment_of_data($objExcel);
+            $excel_data_bus = Excelbus::extract_read_and_treatment_of_data($objExcel);
+
+            Excelbus::compare_and_return_result($excel_data_bus);
 
         }
 
