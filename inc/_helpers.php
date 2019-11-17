@@ -36,7 +36,7 @@ function extract_read_and_treatment_of_data($objExcel, $return)
     $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
 
     $arr_bus_for_excel = array();
-    $arr_cities_boarding_points = array();
+    $arr_boarding_points_excel = array();
 
     for ($i = 2; $i <= $total_linhas; $i++)
     {
@@ -81,9 +81,9 @@ function extract_read_and_treatment_of_data($objExcel, $return)
             $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
         }
 
-        if (!in_array($origem_nome, $arr_cities_boarding_points))
+        if (!in_array($origem_nome, $arr_boarding_points_excel))
         {
-            $arr_cities_boarding_points[] = $origem_nome;
+            $arr_boarding_points_excel[] = $origem_nome;
         }
 
     }
@@ -92,9 +92,9 @@ function extract_read_and_treatment_of_data($objExcel, $return)
     {            
         return $arr_bus_for_excel;
     }
-    else if ($return == 'arrCities')
+    else if ($return == 'arrBoardingPoints')
     {
-        return $arr_cities_boarding_points;
+        return $arr_boarding_points_excel;
     }
     else
     {
@@ -166,11 +166,11 @@ function compare_and_return_result($obj)
             
             // $arr_prefix_registered = explode(',', $string_prefix);
 
-            // Verifica, através do prefixo, se o veículo já está cadastrado
+            // Comparação de prefixos cadastrados com os da planilha
             if(in_array(trim($string_prefix), $arr_prefix_of_excel))
             {
 
-                // descobrir dias de operação
+                // Como domingo é o único dia com horários diferenciados. Com isso supomos que de segunda~sábado os horários sejam os mesmos.
                 if($od_sunday == 'yes')
                 {
                     $operational_day = "DOM";
@@ -178,16 +178,6 @@ function compare_and_return_result($obj)
                 if($od_monday == 'yes')
                 {
                     $operational_day = "SEG";
-                }
-                
-                // Verifica se o "od"(operational day) é domingo. Útil já que aos domingos temos horários diferenciados
-                if ($od_sunday == 'yes')
-                {
-                    echo "Convencional - " . $string_prefix . " (Domingo) / Post id: " . $post_id . "<br>";
-                }
-                else
-                {
-                    echo "Convencional - " . $string_prefix . " (Seg-Sab) / Post id: " . $post_id . "<br>"; 
                 }
 
                 // Pontos de embarque e horários de partida já cadastrados
@@ -239,4 +229,36 @@ function compare_and_return_result($obj)
             }
         }
     }
+}
+
+
+/**
+ * Function register_boarding_points_from_excel($arr);
+ * Desc: Recebe um array de pontos de embarques, faz o tratamento dos nomes, com os nomes tratados verifica se os pontos já estão registrados. 
+ * Pontos que não estiverem registrados do wordpress serão inseridos
+ */
+function register_boarding_points_from_excel($arr)
+{
+    if (!is_array($arr))
+    {
+        echo "Os Pontos de embarque são inválidos. Aplicação finalizada.";
+        exit;
+    }
+    
+    // Tratamento dos nomes, checagem de existencia e registro
+    foreach($arr as $bp)
+    {
+        // Tratamento das strings
+        $bp = ucwords(strtolower($bp));
+        $bp = str_replace(['Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp'], ['São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP'], $bp);
+        
+        // Checagem e registro
+        $taxonomy = 'wbtm_bus_stops';
+        $bp_exists = term_exists($bp, $taxonomy);
+        if ($bp_exists == 0 || $bp_exists == false)
+        {
+            wp_insert_term($bp, $taxonomy);
+        }
+    }
+
 }
