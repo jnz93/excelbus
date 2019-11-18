@@ -23,8 +23,8 @@ function allowed_file_types($fileType)
 
 /**
  * Function extract_read_and_treatment_of_data($obj); - Recebe um objeto excel para leitura, extração e tratamento dos dados, ao final retorna um vetor
- * @param $obj - Um objeto excel retornado da classe PHPExcelReader
- * @return vetor - UM vetor com todos os dados extraídos e armazenados
+ * @param Object - Um objeto excel retornado da classe PHPExcelReader
+ * @return Array - UM vetor com todos os dados extraídos e armazenados
  */
 function extract_read_and_treatment_of_data($objExcel, $return)
 {
@@ -105,16 +105,15 @@ function extract_read_and_treatment_of_data($objExcel, $return)
 
 
 /**
- * Function compare_and_return_result - Recebe um vetor de onde extrai os prefixos vindos do excel para comparação com os prefixos já registrados
- * no wordpress. Ao encontrar prefixos iguais retorna, em forma de um array, os ids para update. Retorna também um array de prefixos para novas
- * publicações.
- * @param vetor - Vetor com os dados do excel
+ * Function check_prefix_and_return_ids - Recebe um vetor extrai os prefixos para comparação com registros do wordpress. 
+ * Ao encontrar prefixos iguais retorna um array os ids para update.
+ * @param Object
+ * @return Array
  */
-function compare_and_return_result($obj)
+function check_prefix_and_return_ids($obj)
 {
-    // Tratamento dos prefixos do excel e transformação em array
+    // Extração dos prefixos
     $string_prefix_of_excel = '';
-    $arr_prefix_origin_and_hours = array();
     for($i = 0; $i <= count($obj); $i++)
     {
         if (isset($obj[$i]))
@@ -122,11 +121,11 @@ function compare_and_return_result($obj)
             $string_prefix_of_excel .= $obj[$i] . ',';
         }
     }
+    // Conversão em array de prefixos
     $arr_prefix_of_excel = explode(',', $string_prefix_of_excel);
     
     
-    // Fase 2
-    // Pegar todos as publicações
+    // WP_Query('wbtm_bus') para comparações
     $args = array(
         'post_type'         => 'wbtm_bus',
         'post_status'       => 'publish',
@@ -134,6 +133,11 @@ function compare_and_return_result($obj)
     );
     $get_posts = new WP_Query($args);
     
+    // Arrays
+    $ids_for_update = array();
+    $prefix_for_new_publish = array();
+    $prefix_excel_after_excludes = $arr_prefix_of_excel;
+
     // Loop para encontrar Prefixos(onibus) já cadastrados
     if ($get_posts->have_posts())
     {
@@ -155,19 +159,16 @@ function compare_and_return_result($obj)
             $od_saturday        = get_post_meta($post_id, 'od_Sat', true);
             
             // Cidades/Trechos de partida
-            $wbtm_bus_boarding_points = get_post_meta($post_id, 'wbtm_bus_bp_stops', false);
+            // $wbtm_bus_boarding_points = get_post_meta($post_id, 'wbtm_bus_bp_stops', false);
 
             // Array meta -> String prefixos
-            $string_prefix = '';
+            $prefix_bus = '';
             foreach($meta_prefix as $prefix)
             {
-                $string_prefix .= $prefix;
+                $prefix_bus .= $prefix;
             }
-            
-            // $arr_prefix_registered = explode(',', $string_prefix);
-
-            // Comparação de prefixos cadastrados com os da planilha
-            if(in_array(trim($string_prefix), $arr_prefix_of_excel))
+            // Verificar se o prefixo já foi cadastrado
+            if(in_array(trim($prefix_bus), $arr_prefix_of_excel))
             {
 
                 // Como domingo é o único dia com horários diferenciados. Com isso supomos que de segunda~sábado os horários sejam os mesmos.
@@ -180,55 +181,16 @@ function compare_and_return_result($obj)
                     $operational_day = "SEG";
                 }
 
-                // Pontos de embarque e horários de partida já cadastrados
-                $arr_od_cities = array();
-                $arr_od_time = array();
-                foreach ($wbtm_bus_boarding_points as $index => $arr_point)
-                {
-                    echo $index . "<br>";
-                    foreach($arr_point as $value)
-                    {
-                        // echo $value['wbtm_bus_bp_stops_name'] . " Saída: " .  $value['wbtm_bus_bp_start_time'] . "<br>";
-
-                        if (!in_array($value['wbtm_bus_bp_stops_name'], $arr_od))
-                        {
-                            $arr_od_cities[] = $value['wbtm_bus_bp_stops_name'];
-                        }
-                        $arr_od_time[] = $value['wbtm_bus_bp_start_time'];
-                    }
-                }
-
-                if (in_array($obj[$string_prefix][$operational_day]['I']['origem_nome'], $arr_od_cities))
-                {
-                    // echo "Sim";
-                    echo $obj[$string_prefix][$operational_day]['I']['origem_nome'];
-                }
-                else
-                {
-                    // echo "Não";
-                    echo $obj[$string_prefix][$operational_day]['I']['origem_nome'];
-                }
-
-
-                echo "<pre>";
-                // echo $wbtm_bus_boarding_points[0][0]['wbtm_bus_bp_stops_name'];
-                // echo $wbtm_bus_boarding_points[0][1]['wbtm_bus_bp_stops_name'];
-                // echo $wbtm_bus_boarding_points[0][2]['wbtm_bus_bp_stops_name'];
-                // var_dump($arr_od);
-                // var_dump($arr_od_time);
-                // var_dump($arr_prefix_origin_and_hours);
-                // var_dump($obj[$string_prefix][$operational_day]['I']['origem_nome']);
-                // var_dump($obj[$string_prefix][$operational_day]['I']['horarios']);
-                // var_dump($obj[$string_prefix][$operational_day]['V']['origem_nome']);
-                // var_dump($obj[$string_prefix][$operational_day]['V']['horarios']);
-                echo "</pre>";
-            }
-            else
-            {
-                $prefix_for_publish .= $string_prefix . ',';
+                // Array de Ids para update
+                $ids_for_update[] = $post_id;
+                
             }
         }
     }
+    // echo '<pre>';
+    // print_r($ids_for_update);
+    // echo '</pre>';
+    return $ids_for_update;
 }
 
 
