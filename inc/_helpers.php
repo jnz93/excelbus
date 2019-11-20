@@ -35,7 +35,7 @@ function extract_read_and_treatment_of_data($objExcel, $return)
     // Total de linhas
     $total_linhas = $objExcel->setActiveSheetIndex(0)->getHighestRow();
 
-    $arr_bus_for_excel = array();
+    $arr_bus_from_excel = array();
     $arr_boarding_points_excel = array();
 
     for ($i = 2; $i <= $total_linhas; $i++)
@@ -52,33 +52,33 @@ function extract_read_and_treatment_of_data($objExcel, $return)
         $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
 
 
-        if (!in_array($prefixo, $arr_bus_for_excel))
+        if (!in_array($prefixo, $arr_bus_from_excel))
         {
-            $arr_bus_for_excel[] = $prefixo;
+            $arr_bus_from_excel[] = $prefixo;
         }
         
-        if ($arr_bus_for_excel[$prefixo][0] != $dia_semana)
+        if ($arr_bus_from_excel[$prefixo][0] != $dia_semana)
         {
-            $arr_bus_for_excel[$prefixo][0] = $dia_semana;
+            $arr_bus_from_excel[$prefixo][0] = $dia_semana;
         }
         
-        $arr_bus_for_excel[$prefixo][$dia_semana]['trechos'][] = $trecho;
+        $arr_bus_from_excel[$prefixo][$dia_semana]['trechos'][] = $trecho;
         
         if ($sentido == "I")
         {
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
         }
         else
         {
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-            $arr_bus_for_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
         }
 
         if (!in_array($origem_nome, $arr_boarding_points_excel))
@@ -90,7 +90,7 @@ function extract_read_and_treatment_of_data($objExcel, $return)
 
     if ($return == 'objExcel')
     {            
-        return $arr_bus_for_excel;
+        return $arr_bus_from_excel;
     }
     else if ($return == 'arrBoardingPoints')
     {
@@ -98,7 +98,7 @@ function extract_read_and_treatment_of_data($objExcel, $return)
     }
     else
     {
-        return $arr_bus_for_excel;
+        return $arr_bus_from_excel;
     }
 }
 
@@ -110,7 +110,7 @@ function extract_read_and_treatment_of_data($objExcel, $return)
  * @param Object
  * @return Array
  */
-function check_prefix_and_return_ids($obj)
+function check_prefix($obj, $return)
 {
     // Extração dos prefixos
     $string_prefix_of_excel = '';
@@ -122,7 +122,7 @@ function check_prefix_and_return_ids($obj)
         }
     }
     // Conversão em array de prefixos
-    $arr_prefix_of_excel = explode(',', $string_prefix_of_excel);
+    $arr_prefix_from_excel = explode(',', $string_prefix_of_excel);
     
     
     // WP_Query('wbtm_bus') para comparações
@@ -136,7 +136,8 @@ function check_prefix_and_return_ids($obj)
     // Arrays
     $ids_for_update = array();
     $prefix_for_new_publish = array();
-    $prefix_excel_after_excludes = $arr_prefix_of_excel;
+    $prefix_for_exclude = array();
+    $prefix_excel_after_excludes = $arr_prefix_from_excel;
 
     // Loop para encontrar Prefixos(onibus) já cadastrados
     if ($get_posts->have_posts())
@@ -168,29 +169,24 @@ function check_prefix_and_return_ids($obj)
                 $prefix_bus .= $prefix;
             }
             // Verificar se o prefixo já foi cadastrado
-            if(in_array(trim($prefix_bus), $arr_prefix_of_excel))
+            if(in_array(trim($prefix_bus), $arr_prefix_from_excel))
             {
-
-                // Como domingo é o único dia com horários diferenciados. Com isso supomos que de segunda~sábado os horários sejam os mesmos.
-                if($od_sunday == 'yes')
-                {
-                    $operational_day = "DOM";
-                }
-                if($od_monday == 'yes')
-                {
-                    $operational_day = "SEG";
-                }
-
                 // Array de Ids para update
                 $ids_for_update[] = $post_id;
-                
+                $prefix_for_exclude[] = $prefix_bus;         
             }
         }
     }
-    // echo '<pre>';
-    // print_r($ids_for_update);
-    // echo '</pre>';
-    return $ids_for_update;
+    $prefix_for_new_publish = array_diff($arr_prefix_from_excel, $prefix_for_exclude);
+    
+    if ($return == "idsUpdate")
+    {
+        return $ids_for_update;
+    }
+    else if($return == "prefixPublish")
+    {
+        return $prefix_for_new_publish;
+    }
 }
 
 
@@ -294,4 +290,21 @@ function update_bp_and_schedules($ids, $objExcel)
         }
         update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
     }
+}
+
+
+/**
+ * Function publish_bp_and_schedules($arr);
+ * Recebe um array com os prefixos ainda não registrados, cria a publicações, pega o ID e faz update nos pontos de embarque e horários
+ * @param Array
+ */
+function publish_bp_and_schedules($arr_prefix, $objExcel)
+{
+    if (!is_array($arr_prefix))
+    {
+        echo "O parametro deve ser um array de Prefixos. Aplicação finalizada.";
+        exit;
+    }
+
+
 }
