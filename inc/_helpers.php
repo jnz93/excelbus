@@ -198,6 +198,7 @@ function check_prefix_and_return_ids($obj)
  * Function register_boarding_points_from_excel($arr);
  * Desc: Recebe um array de pontos de embarques, faz o tratamento dos nomes, com os nomes tratados verifica se os pontos já estão registrados. 
  * Pontos que não estiverem registrados do wordpress serão inseridos
+ * @param Array
  */
 function register_boarding_points_from_excel($arr)
 {
@@ -223,4 +224,74 @@ function register_boarding_points_from_excel($arr)
         }
     }
 
+}
+
+
+/**
+ * Function update_bp_and_schedules($arr);
+ * Recebe um array com ID's das publicações que devem ser atualizadas com pontos de embarques ou horários.
+ * @param Array
+ */
+function update_bp_and_schedules($ids, $objExcel)
+{
+    if (!is_array($ids))
+    {
+        echo "O parametro deve ser um array de ID's. Aplicação finalizada.";
+        exit;
+    }
+
+    // $objExcel - deve conter os dados da planilha que serão atualizados. Portanto precisamos dar get no prefixo da publicação, e buscar os dados no objeto excel referente ao prefixo, ai então poderemos partir para tratamento e atualização dos dados no wordpress.
+    foreach($ids as $id)
+    {
+        // Get meta values
+        $wbtm_bus_boarding_points       = get_post_meta($id, 'wbtm_bus_bp_stops');
+        $bus_prefix                     = get_post_meta($id, 'wbtm_bus_no', true);
+        $od_sunday                      = get_post_meta($id, 'od_Sun', true);
+
+        // Keys
+        $wbtm_bus_stops_meta_key        = 'wbtm_bus_bp_stops';
+        $wbtm_bus_start_time_meta_key   = 'wbtm_bus_bp_start_time';
+        $od                             = '';
+
+        // definição Operational day
+        if ($od_sunday == 'yes')
+        {
+            $od = "DOM";
+        }
+        else
+        {
+            $od = "SEG";
+        }
+
+
+        // Tratamento nos nomes das cidades
+        $arr_wrong_words    = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
+        $arr_correct_words  = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
+
+        $bp_start_name              = ucwords(strtolower($objExcel[$bus_prefix][$od]['I']['origem_nome']));
+        $bp_start_name              = str_replace($arr_wrong_words, $arr_correct_words, $bp_start_name);
+
+        $bp_back_name               = ucwords(strtolower($objExcel[$bus_prefix][$od]['V']['origem_nome']));
+        $bp_back_name               = str_replace($arr_wrong_words, $arr_correct_words, $bp_back_name);
+
+
+        $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
+        $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
+    
+        $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
+
+        $bp_time_to_save = array();
+        for ($i = 0; $i < count($bp_time_to_bus); $i++)
+        {
+            if (($i % 2) == 0)
+            {
+                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_start_name, 'wbtm_bus_bp_start_time' => $bp_time_to_bus[$i]]; 
+            }
+            else
+            {
+                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_back_name, 'wbtm_bus_bp_start_time' => $bp_time_to_bus[$i]];
+            }
+        }
+        update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
+    }
 }
