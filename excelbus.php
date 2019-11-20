@@ -72,10 +72,11 @@ class Excelbus {
             $PHPExcelReader->setReadDataOnly(true);
             $objExcel = $PHPExcelReader->load($target_file);
 
-            $excel_data_bus     = extract_read_and_treatment_of_data($objExcel, 'objExcel');
-            $excel_bp_cities    = extract_read_and_treatment_of_data($objExcel, 'arrCities');
-
-            compare_and_return_result($excel_data_bus);
+            $excel_data_bus             = extract_read_and_treatment_of_data($objExcel, 'objExcel');
+            $excel_boarding_points      = extract_read_and_treatment_of_data($objExcel, 'arrBoardingPoints');
+            $excel_prefix_for_publish   = check_prefix($excel_data_bus, 'prefixPublish');
+            
+            publish_bp_and_schedules($excel_prefix_for_publish, $excel_data_bus);
         }
 
         echo '

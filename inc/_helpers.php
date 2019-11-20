@@ -105,8 +105,10 @@ function extract_read_and_treatment_of_data($objExcel, $return)
 
 
 /**
- * Function check_prefix_and_return_ids - Recebe um vetor extrai os prefixos para comparação com registros do wordpress. 
- * Ao encontrar prefixos iguais retorna um array os ids para update.
+ * Function check_prefix - Recebe um vetor extrai os prefixos para comparação com registros do wordpress. 
+ * Ao encontrar prefixos já publicados adiciona em um array para update.
+ * Se o prefixo não for registrado no wordpress cria uma coleção de prefixos para publicação.
+ * A função precisa de um retorno especificado para ocasião de uso.
  * @param Object
  * @return Array
  */
@@ -298,13 +300,49 @@ function update_bp_and_schedules($ids, $objExcel)
  * Recebe um array com os prefixos ainda não registrados, cria a publicações, pega o ID e faz update nos pontos de embarque e horários
  * @param Array
  */
-function publish_bp_and_schedules($arr_prefix, $objExcel)
+function publish_bp_and_schedules($list_prefix, $objExcel)
 {
-    if (!is_array($arr_prefix))
+    if (!is_array($list_prefix))
     {
         echo "O parametro deve ser um array de Prefixos. Aplicação finalizada.";
         exit;
     }
 
 
+    // $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
+    // $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
+    $new_ids_for_update = array();
+    foreach ($list_prefix as $prefix)
+    {
+        $title = 'Convencional - ' . $prefix . ' [od]';
+        $post_arr = array(
+            'post_title'    => $title,
+            'post_content'  => '',
+            'post_status'   => 'publish',
+            'post_type'     => 'wbtm_bus',
+            'post_author'   => get_current_user_id(),
+            'tax_input'     => array(
+                'wbtm_bus_cat'  => 22
+            ),
+            'meta_input'    => array(
+                'wbtm_bus_no'   => $prefix,
+            ),
+        );
+        $new_post_id = wp_insert_post($post_arr);
+        
+        if(!is_wp_error($new_post_id))
+        {
+            echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
+            $new_ids_for_update[] = $new_post_id;
+        }
+        else{
+            echo $new_post_id->get_error_message();
+        }
+    }
+
+    // Update nas publicações criadas.
+    if (!empty($new_ids_for_update))
+    {
+        update_bp_and_schedules($new_ids_for_update, $objExcel);
+    }
 }
