@@ -68,7 +68,7 @@ class Excelbus {
             $file_name = basename($_FILES[PREFIX . '_file_upload']['name']);
             
             // Iniciar Objeto
-            $PHPExcelReader = new PHPExcel_Reader_Excel5();
+            $PHPExcelReader = new PHPExcel_Reader_Excel2007();
             $PHPExcelReader->setReadDataOnly(true);
             $objExcel = $PHPExcelReader->load($target_file);
 
