@@ -214,13 +214,11 @@ function check_operational_days($objExcel, $prefix, $day)
 
     if (empty($objExcel[$prefix][$day]))
     {
-        // return false;
-        echo 'O veículo '. $prefix .' não opera no dia ' . $day;
+        return '';
     }
     else
     {
-        // return true;
-        echo 'O veículo '. $prefix .' opera no ' . $day;
+        return 'yes';
     }
 }
 
@@ -366,9 +364,38 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         exit;
     }
 
-    
+    $ids_week_to_update = array();
+    $sunday_prefix      = array(); // Recebe prefixos que operam aos domingo
     foreach ($list_prefix as $prefix)
     {
+        $od_sunday      = check_operational_days($objExcel, $prefix, 'DOM');
+        $od_monday      = check_operational_days($objExcel, $prefix, 'SEG');
+        $od_tuesday     = check_operational_days($objExcel, $prefix, 'TER');
+        $od_wednesday   = check_operational_days($objExcel, $prefix, 'QUA');
+        $od_thursday    = check_operational_days($objExcel, $prefix, 'QUI');
+        $od_friday      = check_operational_days($objExcel, $prefix, 'SEX');
+        $od_saturday    = check_operational_days($objExcel, $prefix, 'SAB');
+
+        // Extração dos prefixos que operam aos domingos
+        if ($od_sunday == 'yes')
+        {
+            $sunday_prefix[] = $prefix;
+        }
+        
+        // Definição do título
+        if ($od_monday == 'yes' && $od_saturday == 'yes')
+        {
+            $od_for_title = '[SEG~SAB]';
+        }
+        else if ($od_monday == '' && $od_friday == 'yes')
+        {
+            $od_for_title = '[SEX]';
+        }
+        else
+        {
+            $od_for_title = '[SEG~SEX]';
+        }
+
         // Construção do novo post
         $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
         $post_arr = array(
@@ -382,7 +409,7 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
             ),
             'meta_input'    => array(
                 'wbtm_bus_no'   => $prefix,
-                'od_Sun'        => $od_sunday,
+                // 'od_Sun'        => $od_sunday,
                 'od_Mon'        => $od_monday,
                 'od_Tue'        => $od_tuesday,
                 'od_Wed'        => $od_wednesday,
@@ -396,16 +423,59 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         if(!is_wp_error($new_post_id))
         {
             echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
-            $new_ids_for_update[] = $new_post_id;
+            $ids_week_to_update[] = $new_post_id;
         }
         else{
             echo $new_post_id->get_error_message();
         }
     }
 
-    // Update nas publicações criadas.
-    if (!empty($new_ids_for_update))
+    // Update nas publicações criadas [SEG~SAB]
+    if (!empty($ids_week_to_update))
     {
-        update_bp_and_schedules($new_ids_for_update, $objExcel);
+        update_bp_and_schedules($ids_week_to_update, $objExcel);
     }
+
+
+    // Publicação de veículos que operam aos domingos
+    $ids_sundays_to_update = array();
+    foreach ($sunday_prefix as $prefix)
+    {
+        $od_for_title = '[DOM]';
+        $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
+        $post_arr = array(
+            'post_title'    => $title,
+            'post_content'  => '',
+            'post_status'   => 'publish',
+            'post_type'     => 'wbtm_bus',
+            'post_author'   => get_current_user_id(),
+            'tax_input'     => array(
+                'wbtm_bus_cat'  => 22
+            ),
+            'meta_input'    => array(
+                'wbtm_bus_no'   => $prefix,
+                'od_Sun'        => 'yes',
+            ),
+        );
+        $sunday_post_id = wp_insert_post($post_arr);
+        
+        if(!is_wp_error($new_post_id))
+        {
+            echo '<li>'. $title .' <a href="'. get_edit_post_link($sunday_post_id) .'" target="_blank">Ver</a> </li>';
+            $ids_sundays_to_update[] = $sunday_post_id;
+        }
+        else{
+            echo $sunday_post_id->get_error_message();
+        }
+    }
+
+    // Update nas publicações criadas [SEG~SAB]
+    if (!empty($ids_sundays_to_update))
+    {
+        update_bp_and_schedules($ids_sundays_to_update, $objExcel);
+    }
+    echo '<pre>';
+    // print_r($sunday_prefix);
+    print_r($friday_prefix);
+    echo '</pre>';
 }
