@@ -187,8 +187,11 @@ function check_prefix($objExcel, $return)
 }
 
 /**
- * Function check_operational_days(); Recebe o vetor de dados do excel e verifica os dias de operação de cada veículo.
- * @param Object
+ * Function check_operational_days();
+ * Recebe um vetor do excel, prefixo do veículo e dia da semana abreviado(SEG,TER,QUA,QUI,SEX,SAB,DOM) para verificar operação no dia;
+ * @param Object $objExcel
+ * @param String $prefix
+ * @param String $day
  */
 function check_operational_days($objExcel, $prefix, $day)
 {
@@ -217,7 +220,7 @@ function check_operational_days($objExcel, $prefix, $day)
     else
     {
         // return true;
-        echo 'O veículo '. $prefix .' opera no dia ' . $day;
+        echo 'O veículo '. $prefix .' opera no ' . $day;
     }
 }
 
@@ -363,7 +366,9 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         exit;
     }
 
-
+    
+    foreach ($list_prefix as $prefix)
+    {
         // Construção do novo post
         $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
         $post_arr = array(
