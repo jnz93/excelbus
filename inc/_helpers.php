@@ -312,42 +312,38 @@ function update_bp_and_schedules($ids, $objExcel)
         }
         
         // Tratamento nos nomes das cidades
-        $arr_wrong_words    = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
-        $arr_correct_words  = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
+        $arr_wrong_words            = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
+        $arr_correct_words          = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
 
-        $bp_start_name              = ucwords(strtolower($objExcel[$bus_prefix][$od]['I']['origem_nome']));
-        $bp_start_name              = str_replace($arr_wrong_words, $arr_correct_words, $bp_start_name);
+        $bp_origin_name             = ucwords(strtolower($objExcel[$bus_prefix][$od]['I']['origem_nome']));
+        $bp_origin_name             = str_replace($arr_wrong_words, $arr_correct_words, $bp_origin_name);
 
-        $bp_back_name               = ucwords(strtolower($objExcel[$bus_prefix][$od]['V']['origem_nome']));
-        $bp_back_name               = str_replace($arr_wrong_words, $arr_correct_words, $bp_back_name);
+        $bp_destiny_name            = ucwords(strtolower($objExcel[$bus_prefix][$od]['V']['origem_nome']));
+        $bp_destiny_name            = str_replace($arr_wrong_words, $arr_correct_words, $bp_destiny_name);
 
 
         $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
         $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
-    
-        // Verifica se o array de horários está vazio.
-        if (empty($bp_start_time))
-        {
-            // echo "Horário de embarque não existe";
-            // $bp_start_time = $objExcel[$bus_prefix][''];
-        }
 
         $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
+        $bp_time_to_save            = array();
+        $count                      = 0;
+        asort($bp_time_to_bus);
 
-        $bp_time_to_save = array();
-        for ($i = 0; $i < count($bp_time_to_bus); $i++)
+        foreach ($bp_time_to_bus as $time)
         {
-            if (($i % 2) == 0)
+            if (($count % 2) == 0)
             {
-                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_start_name, 'wbtm_bus_bp_start_time' => $bp_time_to_bus[$i]]; 
+                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time]; 
             }
             else
             {
-                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_back_name, 'wbtm_bus_bp_start_time' => $bp_time_to_bus[$i]];
+                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
             }
+            $count++;
         }
-        update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
     }
+
 }
 
 
@@ -409,7 +405,6 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
             ),
             'meta_input'    => array(
                 'wbtm_bus_no'   => $prefix,
-                // 'od_Sun'        => $od_sunday,
                 'od_Mon'        => $od_monday,
                 'od_Tue'        => $od_tuesday,
                 'od_Wed'        => $od_wednesday,
@@ -474,8 +469,4 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
     {
         update_bp_and_schedules($ids_sundays_to_update, $objExcel);
     }
-    echo '<pre>';
-    // print_r($sunday_prefix);
-    print_r($friday_prefix);
-    echo '</pre>';
 }
