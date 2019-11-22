@@ -112,15 +112,15 @@ function extract_read_and_treatment_of_data($objExcel, $return)
  * @param Object
  * @return Array
  */
-function check_prefix($obj, $return)
+function check_prefix($objExcel, $return)
 {
     // Extração dos prefixos
     $string_prefix_of_excel = '';
-    for($i = 0; $i <= count($obj); $i++)
+    for($i = 0; $i <= count($objExcel); $i++)
     {
-        if (isset($obj[$i]))
+        if (isset($objExcel[$i]))
         {
-            $string_prefix_of_excel .= $obj[$i] . ',';
+            $string_prefix_of_excel .= $objExcel[$i] . ',';
         }
     }
     // Conversão em array de prefixos
@@ -151,19 +151,14 @@ function check_prefix($obj, $return)
             $post_id            = get_the_ID();
             $title              = get_the_title();
             $meta_prefix        = get_post_meta($post_id, 'wbtm_bus_no', false);
-            
-            // Dias de funcionamento
             $od_sunday          = get_post_meta($post_id, 'od_Sun', true);
-            $od_monday          = get_post_meta($post_id, 'od_Mon', true);
-            $od_tuesday         = get_post_meta($post_id, 'od_Tue', true);
-            $od_wednesday       = get_post_meta($post_id, 'od_Wed', true);
-            $od_thursday        = get_post_meta($post_id, 'od_Thu', true);
-            $od_friday          = get_post_meta($post_id, 'od_Fri', true);
-            $od_saturday        = get_post_meta($post_id, 'od_Sat', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Mon', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Tue', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Web', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Thu', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Fri', true);
+            $od_sunday          = get_post_meta($post_id, 'od_Sat', true);
             
-            // Cidades/Trechos de partida
-            // $wbtm_bus_boarding_points = get_post_meta($post_id, 'wbtm_bus_bp_stops', false);
-
             // Array meta -> String prefixos
             $prefix_bus = '';
             foreach($meta_prefix as $prefix)
@@ -175,7 +170,7 @@ function check_prefix($obj, $return)
             {
                 // Array de Ids para update
                 $ids_for_update[] = $post_id;
-                $prefix_for_exclude[] = $prefix_bus;         
+                $prefix_for_exclude[] = $prefix_bus;
             }
         }
     }
@@ -191,6 +186,40 @@ function check_prefix($obj, $return)
     }
 }
 
+/**
+ * Function check_operational_days(); Recebe o vetor de dados do excel e verifica os dias de operação de cada veículo.
+ * @param Object
+ */
+function check_operational_days($objExcel, $prefix, $day)
+{
+
+    if(!is_array($objExcel))
+    {
+        exit;
+    }
+
+    // Extrair prefixos
+    $arr_of_prefix = array();
+    for ($i = 0; $i <= count($objExcel); $i++)
+    {
+        if ($objExcel[$i] != '')
+        {
+            $arr_of_prefix[] = $objExcel[$i];
+        }
+    }
+
+
+    if (empty($objExcel[$prefix][$day]))
+    {
+        // return false;
+        echo 'O veículo '. $prefix .' não opera no dia ' . $day;
+    }
+    else
+    {
+        // return true;
+        echo 'O veículo '. $prefix .' opera no dia ' . $day;
+    }
+}
 
 /**
  * Function register_boarding_points_from_excel($arr);
@@ -244,24 +273,43 @@ function update_bp_and_schedules($ids, $objExcel)
         // Get meta values
         $wbtm_bus_boarding_points       = get_post_meta($id, 'wbtm_bus_bp_stops');
         $bus_prefix                     = get_post_meta($id, 'wbtm_bus_no', true);
-        $od_sunday                      = get_post_meta($id, 'od_Sun', true);
 
+        // Dias de funcionamento
+        $od_sunday          = get_post_meta($id, 'od_Sun', true);
+        $od_monday          = get_post_meta($id, 'od_Mon', true);
+        $od_tuesday         = get_post_meta($id, 'od_Tue', true);
+        $od_wednesday       = get_post_meta($id, 'od_Wed', true);
+        $od_thursday        = get_post_meta($id, 'od_Thu', true);
+        $od_friday          = get_post_meta($id, 'od_Fri', true);
+        $od_saturday        = get_post_meta($id, 'od_Sat', true);
+        
         // Keys
         $wbtm_bus_stops_meta_key        = 'wbtm_bus_bp_stops';
         $wbtm_bus_start_time_meta_key   = 'wbtm_bus_bp_start_time';
         $od                             = '';
 
         // definição Operational day
-        if ($od_sunday == 'yes')
+        if ($od_sunday == "yes")
         {
             $od = "DOM";
+        }
+        else if($od_monday == "yes" && $od_tuesday == "yes" && $od_wednesday == "yes" && $od_thursday == "yes" && $od_friday == "yes")
+        {
+            $od = "SEG";
+        }
+        else if ($od_saturday == "yes")
+        {
+            $od = "SAB";
+        }
+        else if ($od_friday == "yes")
+        {
+            $od = "SEX";
         }
         else
         {
             $od = "SEG";
         }
-
-
+        
         // Tratamento nos nomes das cidades
         $arr_wrong_words    = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
         $arr_correct_words  = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
@@ -276,6 +324,13 @@ function update_bp_and_schedules($ids, $objExcel)
         $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
         $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
     
+        // Verifica se o array de horários está vazio.
+        if (empty($bp_start_time))
+        {
+            // echo "Horário de embarque não existe";
+            // $bp_start_time = $objExcel[$bus_prefix][''];
+        }
+
         $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
 
         $bp_time_to_save = array();
@@ -309,12 +364,8 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
     }
 
 
-    // $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
-    // $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
-    $new_ids_for_update = array();
-    foreach ($list_prefix as $prefix)
-    {
-        $title = 'Convencional - ' . $prefix . ' [od]';
+        // Construção do novo post
+        $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
         $post_arr = array(
             'post_title'    => $title,
             'post_content'  => '',
@@ -326,6 +377,13 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
             ),
             'meta_input'    => array(
                 'wbtm_bus_no'   => $prefix,
+                'od_Sun'        => $od_sunday,
+                'od_Mon'        => $od_monday,
+                'od_Tue'        => $od_tuesday,
+                'od_Wed'        => $od_wednesday,
+                'od_Thu'        => $od_thursday,
+                'od_Fri'        => $od_friday,
+                'od_Sat'        => $od_saturday,
             ),
         );
         $new_post_id = wp_insert_post($post_arr);
