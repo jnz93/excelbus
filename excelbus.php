@@ -75,6 +75,7 @@ class Excelbus {
             $excel_data_bus             = extract_read_and_treatment_of_data($objExcel, 'objExcel');
             $excel_boarding_points      = extract_read_and_treatment_of_data($objExcel, 'arrBoardingPoints');
             $excel_prefix_for_publish   = check_prefix($excel_data_bus, 'prefixPublish');
+            $bus_ids_for_update         = check_prefix($excel_data_bus, 'idsUpdate');
             
             publish_bp_and_schedules($excel_prefix_for_publish, $excel_data_bus);
         }

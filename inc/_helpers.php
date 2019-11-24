@@ -222,6 +222,27 @@ function check_operational_days($objExcel, $prefix, $day)
     }
 }
 
+// Function check_duplicated_time_to_bus();
+function check_duplicated_time_to_bus($curr_arr, $prev_arr)
+{
+
+    $curr_hour          = $curr_arr[0];
+    $curr_minutes       = $curr_arr[1];
+
+    $prev_hour          = $prev_arr[0];
+    $prev_minutes       = $prev_arr[1];
+
+    if($curr_hour === $prev_hour && ($curr_minutes - $prev_minutes) <= 20)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+
 /**
  * Function register_boarding_points_from_excel($arr);
  * Desc: Recebe um array de pontos de embarques, faz o tratamento dos nomes, com os nomes tratados verifica se os pontos já estão registrados. 
@@ -330,18 +351,32 @@ function update_bp_and_schedules($ids, $objExcel)
         $count                      = 0;
         asort($bp_time_to_bus);
 
-        foreach ($bp_time_to_bus as $time)
+        for ($i = 0; $i < count($bp_time_to_bus); $i++)
         {
-            if (($count % 2) == 0)
+            $prev_index     = ($i - 1);
+            $time           = $bp_time_to_bus[$i];
+
+            $curr_time_toArr    = explode(':', $time);
+
+            $prev_time          = $bp_time_to_bus[$prev_index];
+            $prev_time_toArr    = explode(':', $prev_time);
+
+            $check_duplicated   = check_duplicated_time_to_bus($curr_time_toArr, $prev_time_toArr);
+            if ($check_duplicated == true)
             {
-                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time]; 
+                if (($i % 2) == 0)
+                {
+                    $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time]; 
+                }
+                else
+                {
+                    $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
+                }
             }
-            else
-            {
-                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
-            }
-            $count++;
+
         }
+
+        update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
     }
 
 }
@@ -454,7 +489,7 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         );
         $sunday_post_id = wp_insert_post($post_arr);
         
-        if(!is_wp_error($new_post_id))
+        if(!is_wp_error($sunday_post_id))
         {
             echo '<li>'. $title .' <a href="'. get_edit_post_link($sunday_post_id) .'" target="_blank">Ver</a> </li>';
             $ids_sundays_to_update[] = $sunday_post_id;
