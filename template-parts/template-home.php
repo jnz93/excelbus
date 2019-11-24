@@ -1,0 +1,60 @@
+<?php 
+/**
+ * Display homepage excelbus
+ *
+ * @package Excelbus
+ * @since 0.4.0
+ */
+
+if (isset($_FILES[PREFIX . '_file_upload']))
+{
+    // Diretório de upload atual
+    $dir = '../wp-content/uploads' . wp_upload_dir()['subdir'];
+
+    // Enviar o arquivo para o diretório de upload
+    $target_file = $dir . '/' . basename($_FILES[PREFIX . '_file_upload']['name']);
+    move_uploaded_file($_FILES[PREFIX . '_file_upload']['tmp_name'], $target_file);
+    $file_name = basename($_FILES[PREFIX . '_file_upload']['name']);
+    
+    // Iniciar Objeto
+    $PHPExcelReader = new PHPExcel_Reader_Excel2007();
+    $PHPExcelReader->setReadDataOnly(true);
+    $objExcel = $PHPExcelReader->load($target_file);
+
+    $excel_data_bus             = extract_read_and_treatment_of_data($objExcel, 'objExcel');
+    $excel_boarding_points      = extract_read_and_treatment_of_data($objExcel, 'arrBoardingPoints');
+    $excel_prefix_for_publish   = check_prefix($excel_data_bus, 'prefixPublish');
+    $bus_ids_for_update         = check_prefix($excel_data_bus, 'idsUpdate');
+    
+    publish_bp_and_schedules($excel_prefix_for_publish, $excel_data_bus);
+}
+?>
+<main class="mainContent" role="main">
+    <header id="header-main" class="headerMain">
+        <h3 class="headerMain__title">Excelbus Plugin</h3>
+        <p class="headerMain__subtitle"><?php _e('Extraia dados de uma planilha e transforme em publicações', 'TEXT_DOMAIN'); ?></p>
+    </header>
+
+    <nav class="navSteps">
+        <ul class="listSteps">
+            <li class="listSteps__item">
+                <i class="listSteps__icon"></i>
+                <span class="listSteps__text"></span>
+            </li>
+            <li class="listSteps__item">
+                <i class="listSteps__icon"></i>
+                <span class="listSteps__text"></span>
+            </li>
+            <li class="listSteps__item">
+                <i class="listSteps__icon"></i>
+                <span class="listSteps__text"></span>
+            </li>
+        </ul>
+    </nav>
+
+    <section id="content-home" class="content">
+        <?php #include_once('content/content-select.php'); ?>
+        <?php #include_once('content/content-upload.php'); ?>
+        <?php include_once('content/content-result.php'); ?>
+    </section>
+</main>
