@@ -15,5 +15,12 @@
     "excel"
   ],
   "author": "JA93",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "gulp-sass": "^4.0.2",
+    "node-sass": "^4.13.0"
+  },
+  "dependencies": {
+    "gulp": "^4.0.2"
+  }
 }
