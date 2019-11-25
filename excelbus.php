@@ -44,18 +44,30 @@ class Excelbus {
         add_action('admin_menu', array($this, 'create_menu_admin_panel'));
 
         // Enqueue scripts
-        add_action('admin_enqueue_scripts', array($this, 'register_scripts_and_styles'));
+        add_action('admin_enqueue_scripts', array($this, 'register_and_enqueue_scripts'));
     }
 
-    public function register_scripts_and_styles()
+    public function register_and_enqueue_scripts()
     {
+        // Registro de folhas de estilos e frameworks css
+        wp_register_style('ibm-plex-san-font', 'https://fonts.googleapis.com/css?family=IBM+Plex+Sans:400,600&display=swap', array(), 'all');
+        wp_register_style('bootstrap-cdn', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', array(), 'all');
+
+
+        // Enfileiramento css
+        wp_enqueue_style('ibm-plex-san-font');
+        wp_enqueue_style('bootstrap-cdn');
+
+
         // Registro de scripts
         wp_register_script('jquery', plugins_url() . '/excelbus/js/jquery-3.4.1.min.js', array(), false);
         wp_register_script('jquery-ui', plugins_url() . '/excelbus/js/jquery-ui.min.js', array('jquery'), false);
+        wp_register_script('fontawesome', 'https://kit.fontawesome.com/f18f521cf8.js', array(), false);
 
-        // Enfileiramento
+        // Enfileiramento js
         wp_enqueue_script('jquery');
         wp_enqueue_script('jquery-ui');
+        wp_enqueue_script('fontawesome');
     }
 
     // Add menu page
