@@ -5,16 +5,218 @@
 //
 html
     font-size: 62.5%
-
-// 
+input[type='file']
+    display: none
+////////////////////////////////////////////////////////////////////
+//// section.sectionMain
+///////////////////////////////////////////////////////////////////
 .sectionMain
-    padding: 32px
-    margin-top: 32px
-    border-radius: 4px
-    box-shadow: 0px 3px 3px $lightColor
+    height: 720px
+    padding: 16px
+    margin-top: 8px
 
-
-// Header main
+////////////////////////////////////////////////////////////////////
+//// header.headerMain
+///////////////////////////////////////////////////////////////////
 .headerMain
-    margin: 32px auto
+    margin-top: 32px
+    margin-bottom: 16px
     padding: 0
+    // display: none
+
+    &__title
+        color: $primaryColor1
+        text-align: center
+        margin-bottom: 4px
+
+    &__subtitle
+        color: $primaryColor1
+        text-align: center
+        margin-bottom: 4px
+
+////////////////////////////////////////////////////////////////////
+//// header.headerContent
+///////////////////////////////////////////////////////////////////
+.headerContent
+    margin-top: 32px
+    margin-bottom: 32px
+
+    &__title
+        color: $darkColor
+        font-weight: 600
+        text-align: center
+        margin-bottom: 4px
+
+    &__text
+        color: $darkColor
+        text-align: center
+        display: inline-block
+        margin-bottom: 4px
+
+////////////////////////////////////////////////////////////////////
+//// nav.navSteps
+///////////////////////////////////////////////////////////////////
+.navSteps
+    height: 56px
+    margin-top: 32px
+    margin-bottom: 32px
+    display: none
+
+
+////////////////////////////////////////////////////////////////////
+//// div.bodyWrapper
+///////////////////////////////////////////////////////////////////
+.bodyWrapper
+    // height: 400px
+    box-shadow: 0px 0px 6px $lightColor
+
+    &__header
+        margin-top: 32px
+        margin-bottom: 32px
+
+    &__content
+        width: 100%
+        height: 320px
+
+    &__title
+        color: $darkColor
+        font-weight: 600
+        text-align: center
+        margin-bottom: 4px
+
+    &__text
+        color: $darkColor
+        text-align: center
+        display: inline-block
+        margin-bottom: 4px
+
+////////////////////////////////////////////////////////////////////
+//// form.selectForm
+///////////////////////////////////////////////////////////////////
+.selectForm
+    display: flex
+    justify-content: center
+
+    // justify-content: space-between
+
+    &__dragAndDrop
+        background: $lightColor
+        width: 100%
+        height: 220px
+
+        border-radius: 4px
+        padding: 16px
+        box-shadow: 0px 0px 2px $darkColor
+
+        display: flex
+        flex-wrap: wrap
+        flex-flow: column
+        align-items: center
+
+        &--inner
+            height: 100%
+            border: 2px dashed $primaryColor2
+            box-shadow: 0 0 0
+
+    &__icon
+        font-size: $fs-36
+        color: $primaryColor1
+        margin-top: 32px
+        margin-bottom: 15px
+        display: block
+
+    &__text
+        color: $primaryColor1
+        margin-bottom: 32px
+        text-align: center
+    
+    &__archiveName
+        color: $darkColor
+        margin-top: 4px
+        text-align: center
+
+
+////////////////////////////////////////////////////////////////////
+//// cardResult
+///////////////////////////////////////////////////////////////////
+.cardResult
+    margin: auto
+    padding: 16px
+    box-shadow: 4px 4px 4px $lightColor
+
+    display: flex
+    align-items: center
+    justify-content: center
+    flex-flow: column
+
+    &__title
+        font-weight: $fw-bold
+        color: $darkColor
+        margin-bottom: 32px
+
+    &__resultContainer
+        width: 64px
+        height: 64px
+        margin-bottom: 32px
+        position: relative
+
+        display: flex
+        align-items: center
+        justify-content: center
+        flex-flow: column
+
+        &:before
+            content: ''
+            width: 100%
+            height: 100%
+            border-radius: 6px
+            background: $primaryColor1
+            transform: rotate(45deg)
+
+            top: 0
+            left: 0
+            z-index: -1
+            position: absolute
+
+    &__resultNumber
+        color: $lightColor
+        text-align: center
+
+////////////////////////////////////////////////////////////////////
+//// Footer
+///////////////////////////////////////////////////////////////////
+.footerContent
+    height: 40px
+    margin: 0 auto
+
+    display: flex
+    flex-wrap: wrap
+    flex-flow: column
+    align-items: center
+    justify-content: center
+
+
+////////////////////////////////////////////////////////////////////
+//// Mensagens
+///////////////////////////////////////////////////////////////////
+.success
+    display: block
+    margin: 16px auto
+
+    &__message
+        border-radius: 6px
+        background: $successColor
+        color: $lightColor
+        text-align: center
+        padding: 4px 8px
+
+.danger
+    display: block
+    margin: 16px auto
+
+    &__message
+        border-radius: 6px
+        background: $dangerColor
+        color: $lightColor
+        text-align: center
+        padding: 4px 8px

@@ -29,32 +29,42 @@ if (isset($_FILES[PREFIX . '_file_upload']))
     publish_bp_and_schedules($excel_prefix_for_publish, $excel_data_bus);
 }
 ?>
-<main class="mainContent" role="main">
-    <header id="header-main" class="headerMain">
-        <h3 class="headerMain__title">Excelbus Plugin</h3>
-        <p class="headerMain__subtitle"><?php _e('Extraia dados de uma planilha e transforme em publicações', 'TEXT_DOMAIN'); ?></p>
-    </header>
+<main class="container-fluid row justify-content-center" role="main">
+    <section id="content-home" class="sectionMain row justify-content-center col-lg-10 col-xl-10">
+        <div class="row justify-content-center col-lg-10 col-xl-10">
+            <header id="header-main" class="headerMain col-lg-10 col-xl-10">
+                <h5 class="headerMain__title">Excelbus Plugin</h5>
+                <p class="headerMain__subtitle"><?php _e('Extraia dados de uma planilha e transforme em publicações', 'TEXT_DOMAIN'); ?></p>
+            </header>
 
-    <nav class="navSteps">
-        <ul class="listSteps">
-            <li class="listSteps__item">
-                <i class="listSteps__icon"></i>
-                <span class="listSteps__text"></span>
-            </li>
-            <li class="listSteps__item">
-                <i class="listSteps__icon"></i>
-                <span class="listSteps__text"></span>
-            </li>
-            <li class="listSteps__item">
-                <i class="listSteps__icon"></i>
-                <span class="listSteps__text"></span>
-            </li>
-        </ul>
-    </nav>
+            <nav class="navSteps col-lg-10 col-xl-10">
+                <ul class="listSteps">
+                    <li class="listSteps__item">
+                        <i class="listSteps__icon"></i>
+                        <span class="listSteps__text"></span>
+                    </li>
+                    <li class="listSteps__item">
+                        <i class="listSteps__icon"></i>
+                        <span class="listSteps__text"></span>
+                    </li>
+                    <li class="listSteps__item">
+                        <i class="listSteps__icon"></i>
+                        <span class="listSteps__text"></span>
+                    </li>
+                </ul>
+            </nav>
 
-    <section id="content-home" class="content">
-        <?php #include_once('content/content-select.php'); ?>
-        <?php #include_once('content/content-upload.php'); ?>
-        <?php include_once('content/content-result.php'); ?>
+            <div class="bodyWrapper row justify-content-center col-lg-10 col-xl-10">
+                <?php include_once('content/content-select.php'); ?>
+                <?php include_once('content/content-upload.php'); ?>
+                <?php include_once('content/content-result.php'); ?>
+            </div>
+
+            <footer id="footer-content" class="footerContent col-lg-10 col-xl-10">
+                <!-- Mensagens aqui -->
+                <span id="success-message" class="success__message"></span>
+                <span id="danger-message" class="danger__message" style="display: none">Seu arquivo esta corrompido e não pode ser enviado.</span>
+            </footer>
+        </div>
     </section>
 </main>

@@ -6,35 +6,32 @@
  * @since 0.4.0
  */
 ?>
-<header class="headerContent">
-    <h3 class="headerContent__title">Sucesso! Aqui estão os resultados</h3>
-    <p class="headerContent__text">Tarefa realizada com sucesso! Clique nos botões para visualizar as listas de publicações e atualizações.</p>
-</header>
-<div class="bodyContent">
-    <div class="bodyContent__cards">
+<div class="row justify-content-center col-lg-10 col-xl-10" style="display: none;">
+    <header class="bodyWrapper__header">
+        <h6 class="bodyWrapper__title">Sucesso! Aqui estão os resultados</h6>
+        <p class="bodyWrapper__text">Tarefa realizada com sucesso! Clique nos botões para visualizar as listas de publicações e atualizações.</p>
+    </header>
+    <div class="bodyWrapper__content row justify-content-center col-lg-10 col-xl-10">
 
-        <div class="card">
-            <h4 class="card__title">Veículos publicados</h4>
-            <div class="card__resultContainer">
-                <h2 class="card__resultNumber">18</h2>
+            <div class="cardResult col-lg-5 col-xl-5">
+                <p class="cardResult__title">Veículos publicados</p>
+                <div class="cardResult__resultContainer">
+                    <h4 class="cardResult__resultNumber">18</h2>
+                </div>
+                <button class="btn btn__secondary btn__secondary--small">Ver publicados</button>
             </div>
-            <button class="btn">Ver publicados</button>
-        </div>
-        <div class="card">
-            <h4 class="card__title">Veículos Atualizados</h4>
-            <div class="card__resultContainer">
-                <h2 class="card__resultNumber">38</h2>
+            <div class="cardResult col-lg-5 col-xl-5">
+                <p class="cardResult__title">Veículos Atualizados</p>
+                <div class="cardResult__resultContainer">
+                    <h4 class="cardResult__resultNumber">38</h2>
+                </div>
+                <button class="btn btn__secondary btn__secondary--small">Ver atualizados</button>
             </div>
-            <button class="btn">Ver atualizados</button>
+
         </div>
 
-    </div>
-
-    <div class="bodyContent__footer">
-        <button class="btn">Voltar ao inicio</button>
+        <div class="bodyContent__footer">
+            <button class="btn btn__primary">Voltar ao inicio</button>
+        </div>
     </div>
 </div>
-
-<footer id="footer-content" class="footerContent">
-    <!-- Mensagens aqui -->
-</footer>
