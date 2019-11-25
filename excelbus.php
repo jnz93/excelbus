@@ -52,11 +52,12 @@ class Excelbus {
         // Registro de folhas de estilos e frameworks css
         wp_register_style('ibm-plex-san-font', 'https://fonts.googleapis.com/css?family=IBM+Plex+Sans:400,600&display=swap', array(), 'all');
         wp_register_style('bootstrap-cdn', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', array(), 'all');
-
+        wp_register_style('style-excelbus', plugins_url() . '/excelbus/css/style-excelbus.css', array(), false);
 
         // Enfileiramento css
         wp_enqueue_style('ibm-plex-san-font');
         wp_enqueue_style('bootstrap-cdn');
+        wp_enqueue_style('style-excelbus');
 
 
         // Registro de scripts

@@ -1,0 +1,92 @@
+@import '_fonts.sass'
+@import '_colors.sass'
+////////////////////////////////////////////////////////////////////
+//// Botões e estilos
+///////////////////////////////////////////////////////////////////
+.btn
+    background: none
+    border: none
+    margin: 0
+    pdding: 0
+    padding: 16px 32px
+    border-radius: 2px
+    font-size: $fs-16
+    transition: .2s
+
+    ////////////////////////////////////////////////////////////////////
+    //// Primary
+    ///////////////////////////////////////////////////////////////////
+    &__primary
+        background: $primaryColor1
+        color: $lightColor
+
+        &:hover
+            background: $primaryColor2
+            color: $lightColor
+            transition: .2s
+
+
+    ////////////////////////////////////////////////////////////////////
+    //// Secondary
+    ///////////////////////////////////////////////////////////////////
+    &__secondary
+        background: $secondaryColor0
+        color: $primaryColor0
+
+        &:hover
+            background: $secondaryColor2
+            color: $primaryColor0
+            transition: .2s
+
+    ////////////////////////////////////////////////////////////////////
+    //// Utilitários
+    ///////////////////////////////////////////////////////////////////
+    &__success
+        background: $successColor
+        color: $lightColor
+
+        padding: 8px 16px
+        font-size: $fs-12
+        opacity: .8
+
+        &:hover
+            color: $lightColor
+            opacity: 1
+
+    &__successGhost
+        background: none
+        border: 1px solid $successColor
+        color: $successColor
+
+        padding: 8px 16px
+        font-size: $fs-12
+        opacity: .8
+
+        &:hover
+            color: $successColor
+            opacity: 1
+    
+    &__danger
+        background: $dangerColor
+        color: $lightColor
+
+        padding: 8px 16px
+        font-size: $fs-12
+        opacity: .8
+
+        &:hover
+            color: $lightColor
+            opacity: 1
+
+    &__dangerGhost
+        background: none
+        border: 1px solid $dangerColor
+        color: $dangerColor
+
+        padding: 8px 16px
+        font-size: $fs-12
+        opacity: .8
+
+        &:hover
+            color: $dangerColor
+            opacity: 1
