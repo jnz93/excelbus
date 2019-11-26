@@ -220,3 +220,44 @@ input[type='file']
         color: $lightColor
         text-align: center
         padding: 4px 8px
+
+
+////////////////////////////////////////////////////////////////////
+//// Lista de resultados
+///////////////////////////////////////////////////////////////////
+.resultWrapper
+    background: #fff
+    width: 780px
+    height: 480px
+    box-shadow: 0px 0px 6px $lightColor
+
+    position: absolute
+    left: calc(100% / 2 - 390px)
+    top: calc(100% / 2 - 240px)
+    z-index: 999
+
+    display: flex
+    flex-wrap: wrap
+    justify-content: center
+
+    &__title
+        color: $darkColor
+        margin: 32px auto
+        text-align: center
+
+.resultList
+    width: 100%
+    height: auto
+
+    // display: flex
+    // flex-flow: column
+    // align-items: center
+    justify-content: center
+
+    &__item
+        margin: 8px
+        font-size: $fs-12
+        color: $primaryColor1
+
+    &__icon
+        margin-right: 8px

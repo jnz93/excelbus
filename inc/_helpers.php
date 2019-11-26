@@ -152,12 +152,12 @@ function check_prefix($objExcel, $return)
             $title              = get_the_title();
             $meta_prefix        = get_post_meta($post_id, 'wbtm_bus_no', false);
             $od_sunday          = get_post_meta($post_id, 'od_Sun', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Mon', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Tue', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Web', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Thu', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Fri', true);
-            $od_sunday          = get_post_meta($post_id, 'od_Sat', true);
+            $od_monday          = get_post_meta($post_id, 'od_Mon', true);
+            $od_tuesday         = get_post_meta($post_id, 'od_Tue', true);
+            $od_wednesday       = get_post_meta($post_id, 'od_Web', true);
+            $od_thursday        = get_post_meta($post_id, 'od_Thu', true);
+            $od_friday          = get_post_meta($post_id, 'od_Fri', true);
+            $od_saturday        = get_post_meta($post_id, 'od_Sat', true);
             
             // Array meta -> String prefixos
             $prefix_bus = '';
@@ -183,6 +183,10 @@ function check_prefix($objExcel, $return)
     else if($return == "prefixPublish")
     {
         return $prefix_for_new_publish;
+    }
+    else
+    {
+        return $arr_prefix_from_excel;
     }
 }
 
@@ -452,20 +456,14 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         
         if(!is_wp_error($new_post_id))
         {
-            echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
+            // echo 'Semana: <br>';
+            // echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
             $ids_week_to_update[] = $new_post_id;
         }
         else{
             echo $new_post_id->get_error_message();
         }
     }
-
-    // Update nas publicações criadas [SEG~SAB]
-    if (!empty($ids_week_to_update))
-    {
-        update_bp_and_schedules($ids_week_to_update, $objExcel);
-    }
-
 
     // Publicação de veículos que operam aos domingos
     $ids_sundays_to_update = array();
@@ -491,7 +489,8 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         
         if(!is_wp_error($sunday_post_id))
         {
-            echo '<li>'. $title .' <a href="'. get_edit_post_link($sunday_post_id) .'" target="_blank">Ver</a> </li>';
+            // echo 'Domingo: <br>';
+            // echo '<li>'. $title .' <a href="'. get_edit_post_link($sunday_post_id) .'" target="_blank">Ver</a> </li>';
             $ids_sundays_to_update[] = $sunday_post_id;
         }
         else{
@@ -499,9 +498,43 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
         }
     }
 
+    // Merge arrays ids
+    $all_ids = array_merge($ids_week_to_update, $ids_sundays_to_update);
+
+    
+    $all_ids_update = check_prefix($objExcel, 'idsUpdate');
+    
     // Update nas publicações criadas [SEG~SAB]
-    if (!empty($ids_sundays_to_update))
+    if (!empty($all_ids_update))
     {
-        update_bp_and_schedules($ids_sundays_to_update, $objExcel);
+        update_bp_and_schedules($all_ids_update, $objExcel);
     }
+    // print_r($all_ids_update);
+    // Render
+    render_response_page($all_ids_update);
+}
+
+function render_response_page($arr)
+{
+    if (!is_array($arr))
+    {
+        echo 'A função render_response_page precisa que o parâmetro seja uma array.';
+        exit;
+    }
+
+    echo '<div class="resultWrapper">';
+    echo '<h6 class="resultWrapper__title">Resultados da aplicação:</h6>';
+    echo '<ul class="resultList col-lg-11 row">';
+    foreach($arr as $id)
+    {
+        $title      = get_the_title($id);
+        $linkEdit   = get_edit_post_link($id);
+
+        echo '<li class="resultList__item col-lg-5"><a href="'. $linkEdit .'" target="_blank"> <i class="resultList__icon fas fa-bus-alt"></i>'. $title .' </a></li>';
+    }
+    echo '</ul>';
+    echo '<a href="" class="btn btn__secondary">Voltar ao inicio</a>';
+    echo '</div>';
+
+    // includes_once(plugins_url() . '/templates-parts/content/content-result.php');
 }
