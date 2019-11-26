@@ -45,6 +45,8 @@ class Excelbus {
 
         // Enqueue scripts
         add_action('admin_enqueue_scripts', array($this, 'register_and_enqueue_scripts'));
+
+        add_action('admin_enqueue_scripts', array($this, 'rest_upload_archive'));
     }
 
     public function register_and_enqueue_scripts()
@@ -64,11 +66,13 @@ class Excelbus {
         wp_register_script('jquery', plugins_url() . '/excelbus/js/jquery-3.4.1.min.js', array(), false);
         wp_register_script('jquery-ui', plugins_url() . '/excelbus/js/jquery-ui.min.js', array('jquery'), false);
         wp_register_script('fontawesome', 'https://kit.fontawesome.com/f18f521cf8.js', array(), false);
+        wp_register_script('excelbus-js', plugins_url() . '/excelbus/js/main.js', array(), false);
 
         // Enfileiramento js
         wp_enqueue_script('jquery');
         wp_enqueue_script('jquery-ui');
         wp_enqueue_script('fontawesome');
+        wp_enqueue_script('excelbus-js');
     }
 
     // Add menu page
@@ -77,6 +81,15 @@ class Excelbus {
         add_menu_page('Excelbus Plugin', 'Excelbus', 'administrator', 'excelbus-plugin', 'Excelbus::excelbus_render_page', 'dashicons-clock', 65);
     }
 
+    public function rest_upload_archive()
+    {
+        wp_register_script( 'rest-uploader', plugins_url() . '/excelbus/js/upload-rest.js', [ 'jquery' ], false );
+        $js_vars = [
+            'endpoint' => esc_url_raw( rest_url( '/wp/v2/media/' ) ),
+            'nonce'    => wp_create_nonce( 'wp_rest' ),
+        ];
+        wp_localize_script( 'rest-uploader', 'RestVars', $js_vars );
+    }
     
     // Render excelbus html page
     public function excelbus_render_page()
