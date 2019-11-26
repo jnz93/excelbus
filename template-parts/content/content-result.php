@@ -6,7 +6,7 @@
  * @since 0.4.0
  */
 ?>
-<div class="row justify-content-center col-lg-10 col-xl-10" style="display: none;">
+<div class="row justify-content-center col-lg-10 col-xl-10" id="teste-page" style="display: none;">
     <header class="bodyWrapper__header">
         <h6 class="bodyWrapper__title">Sucesso! Aqui estão os resultados</h6>
         <p class="bodyWrapper__text">Tarefa realizada com sucesso! Clique nos botões para visualizar as listas de publicações e atualizações.</p>

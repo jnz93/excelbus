@@ -25,7 +25,7 @@ if (isset($_FILES[PREFIX . '_file_upload']))
     $excel_boarding_points      = extract_read_and_treatment_of_data($objExcel, 'arrBoardingPoints');
     $excel_prefix_for_publish   = check_prefix($excel_data_bus, 'prefixPublish');
     $bus_ids_for_update         = check_prefix($excel_data_bus, 'idsUpdate');
-    
+
     publish_bp_and_schedules($excel_prefix_for_publish, $excel_data_bus);
 }
 ?>
@@ -57,13 +57,13 @@ if (isset($_FILES[PREFIX . '_file_upload']))
             <div class="bodyWrapper row justify-content-center col-lg-10 col-xl-10">
                 <?php include_once('content/content-select.php'); ?>
                 <?php include_once('content/content-upload.php'); ?>
-                <?php include_once('content/content-result.php'); ?>
+                <?php #include_once('content/content-result.php'); ?>
             </div>
 
             <footer id="footer-content" class="footerContent col-lg-10 col-xl-10">
                 <!-- Mensagens aqui -->
-                <span id="success-message" class="success__message"></span>
-                <span id="danger-message" class="danger__message" style="display: none">Seu arquivo esta corrompido e não pode ser enviado.</span>
+                <span id="success-message" class="success__message" style="display: none"></span>
+                <span id="danger-message" class="danger__message" style="display: none"></span>
             </footer>
         </div>
     </section>
