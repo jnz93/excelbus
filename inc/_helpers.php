@@ -109,28 +109,24 @@ function extract_read_and_treatment_of_data($objExcel, $return)
 
 /**
  * Function check_prefix - Recebe um vetor extrai os prefixos para comparação com registros do wordpress. 
- * Ao encontrar prefixos já publicados adiciona em um array para update.
- * Se o prefixo não for registrado no wordpress cria uma coleção de prefixos para publicação.
- * A função precisa de um retorno especificado para ocasião de uso.
- * @param Object
- * @return Array
+ * Prefixos já cadastrados no wordpress são adicionados ao vetor de updates.
+ * Prefixos não cadastrados são adicionados no vetor de publicação.
+ * @param Object = Objeto excel com os dados da planilha
+ * @return Array = Array para update ou publicação
  */
 function check_prefix($objExcel, $return)
 {
-    // Extração dos prefixos
-    $string_prefix_of_excel = '';
+    // Extração dos prefixos da planilha
+    $arr_prefix_from_excel = array();
     for($i = 0; $i <= count($objExcel); $i++)
     {
         if (isset($objExcel[$i]))
         {
-            $string_prefix_of_excel .= $objExcel[$i] . ',';
+            $arr_prefix_from_excel[$i] = $objExcel[$i];
         }
     }
-    // Conversão em array de prefixos
-    $arr_prefix_from_excel = explode(',', $string_prefix_of_excel);
-    
-    
-    // WP_Query('wbtm_bus') para comparações
+
+    // Query para comparação
     $args = array(
         'post_type'         => 'wbtm_bus',
         'post_status'       => 'publish',
@@ -138,47 +134,33 @@ function check_prefix($objExcel, $return)
     );
     $get_posts = new WP_Query($args);
     
-    // Arrays
+    // Definição de arrays
     $ids_for_update = array();
     $prefix_for_new_publish = array();
     $prefix_for_exclude = array();
-    $prefix_excel_after_excludes = $arr_prefix_from_excel;
 
-    // Loop para encontrar Prefixos(onibus) já cadastrados
+    // Buscar veiculos já cadastrados via prefixo
     if ($get_posts->have_posts())
     {
         while ($get_posts->have_posts())
         {
             $get_posts->the_post();
 
-            $post_id            = get_the_ID();
-            $title              = get_the_title();
-            $meta_prefix        = get_post_meta($post_id, 'wbtm_bus_no', false);
-            $od_sunday          = get_post_meta($post_id, 'od_Sun', true);
-            $od_monday          = get_post_meta($post_id, 'od_Mon', true);
-            $od_tuesday         = get_post_meta($post_id, 'od_Tue', true);
-            $od_wednesday       = get_post_meta($post_id, 'od_Web', true);
-            $od_thursday        = get_post_meta($post_id, 'od_Thu', true);
-            $od_friday          = get_post_meta($post_id, 'od_Fri', true);
-            $od_saturday        = get_post_meta($post_id, 'od_Sat', true);
-            
-            // Array meta -> String prefixos
-            $prefix_bus = '';
-            foreach($meta_prefix as $prefix)
-            {
-                $prefix_bus .= $prefix;
-            }
+            $post_id    = get_the_ID();
+            $prefix     = trim(get_post_meta($post_id, 'wbtm_bus_no', true));
+
             // Verificar se o prefixo já foi cadastrado
-            if(in_array(trim($prefix_bus), $arr_prefix_from_excel))
+            if(in_array($prefix, $arr_prefix_from_excel))
             {
                 // Array de Ids para update
                 $ids_for_update[] = $post_id;
-                $prefix_for_exclude[] = $prefix_bus;
+                $prefix_for_exclude[] = $prefix;
             }
         }
     }
     $prefix_for_new_publish = array_diff($arr_prefix_from_excel, $prefix_for_exclude);
     
+    // Retorno da função
     if ($return == "idsUpdate")
     {
         return $ids_for_update;
@@ -195,7 +177,7 @@ function check_prefix($objExcel, $return)
 
 /**
  * Function check_operational_days();
- * Recebe um vetor do excel, prefixo do veículo e dia da semana abreviado(SEG,TER,QUA,QUI,SEX,SAB,DOM) para verificar operação no dia;
+ * Recebe um vetor multidimensional do excel, prefixo do veículo e dia da semana abreviado(SEG,TER,QUA,QUI,SEX,SAB,DOM) para verificar operação no dia;
  * Retorna "yes" para "off-days" e "" para dias de operação.
  * @param Object $objExcel
  * @param String $prefix
@@ -209,30 +191,16 @@ function check_operational_days($objExcel, $prefix, $day)
         exit;
     }
 
-    // Extrair prefixos
-    $arr_of_prefix = array();
-    for ($i = 0; $i <= count($objExcel); $i++)
+    // $week_days = array('DOM','SEG','TER','QUA','QUI','SEX','SAB');
+    $curr_day = $objExcel[$prefix][$day];
+
+    if (empty($curr_day) || $curr_day == '')
     {
-        if ($objExcel[$i] != '')
-        {
-            $arr_of_prefix[] = $objExcel[$i];
-        }
-    }
-
-    $offday = $objExcel[$prefix][$day];
-
-    // print $offday;
-
-    
-    if (empty($offday) || $offday == '')
-    {
+        // echo 'O Veículo: <b>' . $prefix . '</b> não opera no dia ' . $day . '<br>';
         return 'yes';
     }
     else
     {
-        echo '<pre>';
-        print_r($offday);
-        echo '</pre>';
         return '';
     }
 }
@@ -411,11 +379,11 @@ function update_bp_and_schedules($ids, $objExcel)
 
 
 /**
- * Function publish_bp_and_schedules($arr);
+ * Function publish_vehicle_by_prefix($arr);
  * Recebe um array com os prefixos ainda não registrados, cria a publicações, pega o ID e faz update nos pontos de embarque e horários
  * @param Array
  */
-function publish_bp_and_schedules($list_prefix, $objExcel)
+function publish_vehicle_by_prefix($list_prefix, $objExcel)
 {
     if (!is_array($list_prefix))
     {
@@ -427,98 +395,70 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
     $sunday_prefix      = array(); // Recebe prefixos que operam aos domingo
     foreach ($list_prefix as $prefix)
     {
-        $od_sunday      = check_operational_days($objExcel, $prefix, 'DOM');
-        $od_monday      = check_operational_days($objExcel, $prefix, 'SEG');
-        $od_tuesday     = check_operational_days($objExcel, $prefix, 'TER');
-        $od_wednesday   = check_operational_days($objExcel, $prefix, 'QUA');
-        $od_thursday    = check_operational_days($objExcel, $prefix, 'QUI');
-        $od_friday      = check_operational_days($objExcel, $prefix, 'SEX');
-        $od_saturday    = check_operational_days($objExcel, $prefix, 'SAB');
+        if ($prefix != '')
+        {
 
-        // Extração dos prefixos que operam aos domingos
-        if ($od_sunday == 'yes')
-        {
-            $sunday_prefix[] = $prefix;
-        }
-        
-        // Definição do título
-        if ($od_monday == 'yes' && $od_saturday == 'yes')
-        {
-            $od_for_title = '[SEG~SAB]';
-        }
-        else if ($od_monday == '' && $od_friday == 'yes')
-        {
-            $od_for_title = '[SEX]';
-        }
-        else
-        {
-            $od_for_title = '[SEG~SEX]';
-        }
-
-        // Construção do novo post
-        $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
-        $post_arr = array(
-            'post_title'    => $title,
-            'post_content'  => '',
-            'post_status'   => 'publish',
-            'post_type'     => 'wbtm_bus',
-            'post_author'   => get_current_user_id(),
-            'tax_input'     => array(
-                'wbtm_bus_cat'  => 22
-            ),
-            'meta_input'    => array(
-                'wbtm_bus_no'   => $prefix,
-                'od_Mon'        => $od_monday,
-                'od_Tue'        => $od_tuesday,
-                'od_Wed'        => $od_wednesday,
-                'od_Thu'        => $od_thursday,
-                'od_Fri'        => $od_friday,
-                'od_Sat'        => $od_saturday,
-            ),
-        );
-        $new_post_id = wp_insert_post($post_arr);
-        
-        if(!is_wp_error($new_post_id))
-        {
-            // echo 'Semana: <br>';
-            // echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
-            $ids_week_to_update[] = $new_post_id;
-        }
-        else{
-            echo $new_post_id->get_error_message();
-        }
-    }
-
-    // Publicação de veículos que operam aos domingos
-    $ids_sundays_to_update = array();
-    foreach ($sunday_prefix as $prefix)
-    {
-        $od_for_title = '[DOM]';
-        $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
-        $post_arr = array(
-            'post_title'    => $title,
-            'post_content'  => '',
-            'post_status'   => 'publish',
-            'post_type'     => 'wbtm_bus',
-            'post_author'   => get_current_user_id(),
-            'tax_input'     => array(
-                'wbtm_bus_cat'  => 22
-            ),
-            'meta_input'    => array(
-                'wbtm_bus_no'   => $prefix,
-                'od_Sun'        => 'yes',
-            ),
-        );
-        $sunday_post_id = wp_insert_post($post_arr);
-        
-        if(!is_wp_error($sunday_post_id))
-        {
-            // echo 'Domingo: <br>';
-            // echo '<li>'. $title .' <a href="'. get_edit_post_link($sunday_post_id) .'" target="_blank">Ver</a> </li>';
-            $ids_sundays_to_update[] = $sunday_post_id;
-        }
-        else{
-            echo $sunday_post_id->get_error_message();
+            $od_sunday      = check_operational_days($objExcel, $prefix, 'DOM');
+            $od_monday      = check_operational_days($objExcel, $prefix, 'SEG');
+            $od_tuesday     = check_operational_days($objExcel, $prefix, 'TER');
+            $od_wednesday   = check_operational_days($objExcel, $prefix, 'QUA');
+            $od_thursday    = check_operational_days($objExcel, $prefix, 'QUI');
+            $od_friday      = check_operational_days($objExcel, $prefix, 'SEX');
+            $od_saturday    = check_operational_days($objExcel, $prefix, 'SAB');
+    
+            // Extração dos prefixos que operam aos domingos
+            if ($od_sunday == 'yes')
+            {
+                $sunday_prefix[] = $prefix;
+            }
+            
+            // Definição do título
+            if ($od_monday == 'yes' && $od_saturday == 'yes')
+            {
+                $od_for_title = '[SEG~SAB]';
+            }
+            else if ($od_monday == '' && $od_friday == 'yes')
+            {
+                $od_for_title = '[SEX]';
+            }
+            else
+            {
+                $od_for_title = '[SEG~SEX]';
+            }
+    
+            // Construção do novo post
+            $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
+            $post_arr = array(
+                'post_title'    => $title,
+                'post_content'  => '',
+                'post_status'   => 'publish',
+                'post_type'     => 'wbtm_bus',
+                'post_author'   => get_current_user_id(),
+                'tax_input'     => array(
+                    'wbtm_bus_cat'  => 22
+                ),
+                'meta_input'    => array(
+                    'wbtm_bus_no'   => $prefix,
+                    'od_Sun'        => $od_sunday,
+                    'od_Mon'        => $od_monday,
+                    'od_Tue'        => $od_tuesday,
+                    'od_Wed'        => $od_wednesday,
+                    'od_Thu'        => $od_thursday,
+                    'od_Fri'        => $od_friday,
+                    'od_Sat'        => $od_saturday,
+                ),
+            );
+            $new_post_id = wp_insert_post($post_arr);
+            
+            if(!is_wp_error($new_post_id))
+            {
+                // echo 'Semana: <br>';
+                // echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
+                $ids_week_to_update[] = $new_post_id;
+            }
+            else{
+                echo $new_post_id->get_error_message();
+            }
         }
     }
 
@@ -529,10 +469,10 @@ function publish_bp_and_schedules($list_prefix, $objExcel)
     $all_ids_update = check_prefix($objExcel, 'idsUpdate');
     
     // Update nas publicações criadas [SEG~SAB]
-    if (!empty($all_ids_update))
-    {
-        update_bp_and_schedules($all_ids_update, $objExcel);
-    }
+    // if (!empty($all_ids_update))
+    // {
+    //     update_bp_and_schedules($all_ids_update, $objExcel);
+    // }
     // print_r($all_ids_update);
     // Render
     render_response_page($all_ids_update);
