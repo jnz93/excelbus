@@ -47,9 +47,10 @@ function extract_read_and_treatment_of_data($objExcel, $return)
         $hora_saida     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(4, $i));
         $origem_id      = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(5, $i));
         $origem_nome    = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(6, $i));
-        $destino_id     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(7, $i));
-        $destino_nome   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(8, $i));
-        $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
+        $hora_chegada   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(7, $i));
+        $destino_id     = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(8, $i));
+        $destino_nome   = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(9, $i));
+        $sentido        = utf8_decode($objExcel->getActiveSheet()->getCellByColumnAndRow(10, $i));
 
 
         if (!in_array($prefixo, $arr_bus_from_excel))
@@ -66,19 +67,21 @@ function extract_read_and_treatment_of_data($objExcel, $return)
         
         if ($sentido == "I")
         {
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']           = $origem_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']         = $origem_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']          = $destino_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome']        = $destino_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]          = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios_chegada'][]  = $hora_chegada;
         }
         else
         {
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']    = $origem_id;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']  = $origem_nome;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']   = $destino_id;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome'] = $destino_nome;
-            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]   = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_id']           = $origem_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['origem_nome']         = $origem_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_id']          = $destino_id;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['destino_nome']        = $destino_nome;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios'][]          = $hora_saida;
+            $arr_bus_from_excel[$prefixo][$dia_semana][$sentido]['horarios_chegada'][]  = $hora_chegada;
         }
 
         if (!in_array($origem_nome, $arr_boarding_points_excel))
@@ -193,6 +196,7 @@ function check_prefix($objExcel, $return)
 /**
  * Function check_operational_days();
  * Recebe um vetor do excel, prefixo do veículo e dia da semana abreviado(SEG,TER,QUA,QUI,SEX,SAB,DOM) para verificar operação no dia;
+ * Retorna "yes" para "off-days" e "" para dias de operação.
  * @param Object $objExcel
  * @param String $prefix
  * @param String $day
@@ -215,14 +219,21 @@ function check_operational_days($objExcel, $prefix, $day)
         }
     }
 
+    $offday = $objExcel[$prefix][$day];
 
-    if (empty($objExcel[$prefix][$day]))
+    // print $offday;
+
+    
+    if (empty($offday) || $offday == '')
     {
-        return '';
+        return 'yes';
     }
     else
     {
-        return 'yes';
+        echo '<pre>';
+        print_r($offday);
+        echo '</pre>';
+        return '';
     }
 }
 
@@ -347,18 +358,28 @@ function update_bp_and_schedules($ids, $objExcel)
         $bp_destiny_name            = str_replace($arr_wrong_words, $arr_correct_words, $bp_destiny_name);
 
 
+        // Tratamento e armazenamento dos horários de partida
         $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
         $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
 
         $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
         $bp_time_to_save            = array();
-        $count                      = 0;
         asort($bp_time_to_bus);
+
+        // Tratamento e armazenamento dos horários de chegada
+        $start_arrival_time         = $objExcel[$bus_prefix][$od]['I']['horarios_chegada'];
+        $back_arrival_time          = $objExcel[$bus_prefix][$od]['V']['horarios_chegada'];
+
+        $arrival_time               = array_merge($start_arrival_time, $back_arrival_time);
+        $arrival_time_to_save       = array();
+        asort($arrival_time);
+
 
         for ($i = 0; $i < count($bp_time_to_bus); $i++)
         {
             $prev_index     = ($i - 1);
             $time           = $bp_time_to_bus[$i];
+            $time_stop      = $arrival_time[$i];
 
             $curr_time_toArr    = explode(':', $time);
 
@@ -370,17 +391,20 @@ function update_bp_and_schedules($ids, $objExcel)
             {
                 if (($i % 2) == 0)
                 {
-                    $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time]; 
+                    $bp_time_to_save[]      = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time];
+                    $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_destiny_name, 'wbtm_bus_next_end_time' => $time_stop];
                 }
                 else
                 {
                     $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
+                    $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_origin_name, 'wbtm_bus_next_end_time' => $time_stop];
                 }
             }
 
         }
 
         update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
+        update_post_meta($id, 'wbtm_bus_next_stops', $arrival_time_to_save);
     }
 
 }
