@@ -227,6 +227,20 @@ function check_duplicated_time_to_bus($curr_arr, $prev_arr)
 
 
 /**
+ * Function check_identical_bp_hours($arr1, $arr2);
+ * Faz os tratamentos necessários nos arrays antes da comparação. Depois retorna um bool da comparação 
+ */
+function check_identical_bp_hours($arr1, $arr2)
+{
+    array_unique($arr1); # Remover valores duplicados
+    array_unique($arr2); # Remover valores duplicados
+    sort($arr1); # Ordenação menor > maior
+    sort($arr2); # Ordenação menor > maior
+
+    return $arr1 == $arr2; # Bool: retorno da comparação
+}
+
+/**
  * Function register_boarding_points_from_excel($arr);
  * Desc: Recebe um array de pontos de embarques, faz o tratamento dos nomes, com os nomes tratados verifica se os pontos já estão registrados. 
  * Pontos que não estiverem registrados do wordpress serão inseridos
