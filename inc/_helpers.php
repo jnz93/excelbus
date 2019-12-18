@@ -241,6 +241,94 @@ function check_identical_bp_hours($arr1, $arr2)
 }
 
 /**
+ * Function group_of_working($prefix, $objExcel);
+ * Encontra dias de operação idênticos, ou seja, com os mesmos horários. E retorna para publicação
+ */
+function group_of_working($prefix, $obj)
+{
+    # ARRAY: Checagem dias de operação
+    # "yes" = dia de folga
+    # "" = dia de operação 
+    $week_checked_od['DOM'] = check_operational_days($obj, $prefix, 'DOM');
+    $week_checked_od['SEG'] = check_operational_days($obj, $prefix, 'SEG');
+    $week_checked_od['TER'] = check_operational_days($obj, $prefix, 'TER');
+    $week_checked_od['QUA'] = check_operational_days($obj, $prefix, 'QUA');
+    $week_checked_od['QUI'] = check_operational_days($obj, $prefix, 'QUI');
+    $week_checked_od['SEX'] = check_operational_days($obj, $prefix, 'SEX');
+    $week_checked_od['SAB'] = check_operational_days($obj, $prefix, 'SAB');
+
+    # ARRAY: Tratamento dos horários de embarque por dia
+    $boarding_hours_per_day         = array();
+    foreach ($week_checked_od as $day => $od)
+    {
+        if (empty($od))
+        {
+            $hours_per_day_going[$day] = $obj[$prefix][$day]['I']['horarios'];
+            $hours_per_day_return[$day] = $obj[$prefix][$day]['V']['horarios'];
+
+            $boarding_hours_per_day[$day] = array_merge($hours_per_day_going[$day], $hours_per_day_return[$day]);
+        }
+    }
+
+    # Checagem e armazenamento de veiculos que operam nos mesmos horarios em dias diferentes
+    /**
+     * Comparar horarios de embarque dia-a-dia com todos os outros dias restantes na semana, isso é, a partir do dia atual menos ele mesmo.
+     * Dias com horários iguais serão salvos em um array
+     * Dias com horários diferentes serão salvos em outro array
+     */
+    $days_with_same_hours       = array();
+    $days_with_diferent_hours   = array();
+    $week_days                  = array('DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB');
+    $week_for_compare           = $week_days;
+    foreach($week_days as $day)
+    {
+        # Se $od for vazio prossegue a operação
+        $od = $week_checked_od[$day];
+        if (empty($od)){
+
+            $curr_day_bp_start_hours    = $boarding_hours_per_day[$day]; # Arr de horarios do dia atual
+            // $curr_day_bp_start_hours    = array_unique($curr_day_bp_start_hours); # Elimina valores duplicados
+            // sort($curr_day_bp_start_hours); # Ordenação do menor para o maior
+            
+            # Baseado no $day compara os horarios de operação com todos os outros dias
+            foreach ($week_for_compare as $day_for_compare)
+            {
+                if ($day_for_compare != $day)
+                {
+                    $hours = $boarding_hours_per_day[$day_for_compare]; # Coleta os horários do dia para comparação
+                    // $hours = array_unique($hours); # Elimina valores duplicados
+                    // sort($hours); # Ordenação do menor para o maior
+
+                    if (check_identical_bp_hours($curr_day_bp_start_hours, $hours)) 
+                    {
+                        if (!in_array($day, $days_with_same_hours))
+                        {
+                            $days_with_same_hours[] = $day;
+                        }
+                    }
+                }
+            }
+
+            # Dias com horários distintos dos outros
+            if (!in_array($day, $days_with_same_hours))
+            {
+                $days_with_diferent_hours[] = $day;
+            }
+        }
+
+    }
+
+     # -> LOGS
+     echo 'Veículo ' . $prefix . ' Opera nos mesmos horários nos dias: <br><pre>';
+     print_r($days_with_same_hours);
+     echo '</pre><br>';
+     echo 'E opera me horários distintos nos dias: <br><pre>';
+     print_r($days_with_diferent_hours);
+     echo '</pre><br>';
+}
+
+
+/**
  * Function register_boarding_points_from_excel($arr);
  * Desc: Recebe um array de pontos de embarques, faz o tratamento dos nomes, com os nomes tratados verifica se os pontos já estão registrados. 
  * Pontos que não estiverem registrados do wordpress serão inseridos
