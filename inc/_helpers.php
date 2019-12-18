@@ -244,7 +244,7 @@ function check_identical_bp_hours($arr1, $arr2)
  * Function group_of_working($prefix, $objExcel);
  * Encontra dias de operação idênticos, ou seja, com os mesmos horários. E retorna para publicação
  */
-function group_of_working($prefix, $obj)
+function check_group_of_working($prefix, $obj)
 {
     # ARRAY: Checagem dias de operação
     # "yes" = dia de folga
