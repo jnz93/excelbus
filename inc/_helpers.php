@@ -302,7 +302,7 @@ function check_group_of_working($prefix, $obj)
         $od = $week_checked_od[$day];
         if (empty($od)){
 
-            $curr_day_bp_start_hours    = $boarding_hours_per_day[$day]; # Arr de horarios do dia atual
+            $curr_day_bp_start_hours    = $boarding_hours_per_day[$day]; # Arr de horarios do dia atual            
             // $curr_day_bp_start_hours    = array_unique($curr_day_bp_start_hours); # Elimina valores duplicados
             // sort($curr_day_bp_start_hours); # Ordenação do menor para o maior
             
@@ -334,7 +334,18 @@ function check_group_of_working($prefix, $obj)
 
     }
 
-     # -> LOGS
+    # Retorno: Array multidimensional com as "configurações" de operação diária por veículo.
+    $od_group_string = implode(', ', $days_with_same_hours);
+    $od_another_group_string = implode(', ', $days_with_diferent_hours);
+    
+    $arr_setup_vehicle = array();
+    $arr_setup_vehicle[0]['title'] = 'Convencional - ' . $prefix . ' [' . $od_group_string . ']';
+    $arr_setup_vehicle[0]['od'] = $days_with_same_hours;
+
+    $arr_setup_vehicle[1]['title'] = 'Convencional - ' . $prefix . ' [' . $od_another_group_string . ']';
+    $arr_setup_vehicle[1]['od'] = $days_with_diferent_hours;
+
+    # -> LOGS
      echo 'Veículo ' . $prefix . ' Opera nos mesmos horários nos dias: <br><pre>';
      print_r($days_with_same_hours);
      echo '</pre><br>';
