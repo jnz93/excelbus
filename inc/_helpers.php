@@ -509,12 +509,40 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
         exit;
     }
 
-    $ids_week_to_update = array();
-    $sunday_prefix      = array(); // Recebe prefixos que operam aos domingo
+    $ids_week_to_update         = array();
+    $week_checked_od            = array(); // Armazenar dias de folga
+    $sunday_prefix              = array(); // Recebe prefixos que operam aos domingo
+    $days_week                  = array('DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB');
+
     foreach ($list_prefix as $prefix)
     {
-        if ($prefix != '')
+        $setup_post     = check_group_of_working($prefix, $objExcel);
+
+        # Construção post dias iguais
+        $title = $setup_post[0]['title'];
+        $arr_od = $setup_post[0]['od'];
+
+        // Se exister dias de operação em dias iguais
+        if (!empty($arr_od))
         {
+            $od_sunday      = 'yes';
+            $od_monday      = 'yes';
+            $od_tuesday     = 'yes';
+            $od_wednesday   = 'yes';
+            $od_thursday    = 'yes';
+            $od_friday      = 'yes';
+            $od_saturday    = 'yes';
+    
+            // Marca os dias de operação corretamente
+            for ($i = 0; $i < count($days_week); $i++)
+            {
+                if ($days_week[$i] == 'DOM' && in_array($days_week[$i], $arr_od))
+                {
+                    $od_sunday = '';
+                }
+                
+                if ($days_week[$i] == 'SEG' && in_array($days_week[$i], $arr_od))
+                {
 
             $od_sunday      = check_operational_days($objExcel, $prefix, 'DOM');
             $od_monday      = check_operational_days($objExcel, $prefix, 'SEG');
@@ -578,6 +606,93 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
                 echo $new_post_id->get_error_message();
             }
         }
+
+        # Construção post dias diferentes
+        $arr_od2 = $setup_post[1]['od'];
+
+        // Se existir dias de operação diferentes
+        if (!empty($arr_od2))
+        {
+            foreach($arr_od2 as $day)
+            {
+
+                $od_sunday      = 'yes';
+                $od_monday      = 'yes';
+                $od_tuesday     = 'yes';
+                $od_wednesday   = 'yes';
+                $od_thursday    = 'yes';
+                $od_friday      = 'yes';
+                $od_saturday    = 'yes';
+        
+                // Marca os dias de operação corretamente
+                if ($day == 'DOM')
+                {
+                    $od_sunday = '';
+                }
+                
+                if ($day == 'SEG')
+                {
+                    $od_monday = '';
+                }
+    
+                if ($day == 'TER')
+                {
+                    $od_tuesday = '';
+                }
+                
+                if ($day == 'QUA')
+                {
+                    $od_wednesday = '';
+                }
+    
+                if ($day == 'QUI')
+                {
+                    $od_thursday = '';
+                }
+                
+                if ($day == 'SEX')
+                {
+                    $od_friday = '';
+                }
+                
+                if ($day == 'SAB')
+                {
+                    $od_saturday = '';
+                }
+
+                $title2 = 'Convencional - ' . $prefix . ' [' . $day . ']';
+                $post_arr = array(
+                    'post_title'    => $title2,
+                    'post_content'  => '',
+                    'post_status'   => 'publish',
+                    'post_type'     => 'wbtm_bus',
+                    'post_author'   => get_current_user_id(),
+                    'tax_input'     => array(
+                        'wbtm_bus_cat'  => 22
+                    ),
+                    'meta_input'    => array(
+                        'wbtm_bus_no'   => $prefix,
+                        'od_Sun'        => $od_sunday,
+                        'od_Mon'        => $od_monday,
+                        'od_Tue'        => $od_tuesday,
+                        'od_Wed'        => $od_wednesday,
+                        'od_Thu'        => $od_thursday,
+                        'od_Fri'        => $od_friday,
+                        'od_Sat'        => $od_saturday,
+                    ),
+                );
+                $new_post_id = wp_insert_post($post_arr);
+                
+                if(!is_wp_error($new_post_id))
+                {
+                    $ids_sundays_to_update[] = $new_post_id;
+                }
+                else{
+                    echo $new_post_id->get_error_message();
+                }
+            }
+        }
+        
     }
 
     // Merge arrays ids
@@ -587,12 +702,10 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
     $all_ids_update = check_prefix($objExcel, 'idsUpdate');
     
     // Update nas publicações criadas [SEG~SAB]
-    // if (!empty($all_ids_update))
-    // {
-    //     update_bp_and_schedules($all_ids_update, $objExcel);
-    // }
-    // print_r($all_ids_update);
-    // Render
+    if (!empty($all_ids_update))
+    {
+        update_bp_and_schedules($all_ids_update, $objExcel);
+    }
     render_response_page($all_ids_update);
 }
 
