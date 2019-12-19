@@ -237,6 +237,22 @@ function check_identical_bp_hours($arr1, $arr2)
     sort($arr1); # Ordenação menor > maior
     sort($arr2); # Ordenação menor > maior
 
+    # Comparar os dois arrays e extrair o(s) valor(es) diferente(s)
+    $diff1 = array_diff($arr1, $arr2);
+    $diff2 = array_diff($arr2, $arr1);
+
+    # Fail fast
+    if (count($diff1) > 1 || count($diff2) > 1)
+    {
+        return false;
+    }
+
+    # Se a diferença de um pro outro for 1 assumimos que se trata dos mesmos horários
+    if (count($diff1) == 1 || count($diff2) == 1)
+    {
+        return true;
+    }
+
     return $arr1 == $arr2; # Bool: retorno da comparação
 }
 
