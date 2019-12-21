@@ -398,70 +398,51 @@ function update_bp_and_schedules($ids, $objExcel)
     // $objExcel - deve conter os dados da planilha que serão atualizados. Portanto precisamos dar get no prefixo da publicação, e buscar os dados no objeto excel referente ao prefixo, ai então poderemos partir para tratamento e atualização dos dados no wordpress.
     foreach($ids as $id)
     {
-        // Get meta values
+        # Get meta values
+        $the_title                      = get_the_title($id);
         $wbtm_bus_boarding_points       = get_post_meta($id, 'wbtm_bus_bp_stops');
         $bus_prefix                     = get_post_meta($id, 'wbtm_bus_no', true);
 
-        // Dias de funcionamento
-        $od_sunday          = get_post_meta($id, 'od_Sun', true);
-        $od_monday          = get_post_meta($id, 'od_Mon', true);
-        $od_tuesday         = get_post_meta($id, 'od_Tue', true);
-        $od_wednesday       = get_post_meta($id, 'od_Wed', true);
-        $od_thursday        = get_post_meta($id, 'od_Thu', true);
-        $od_friday          = get_post_meta($id, 'od_Fri', true);
-        $od_saturday        = get_post_meta($id, 'od_Sat', true);
-        
-        // Keys
+        # Keys
         $wbtm_bus_stops_meta_key        = 'wbtm_bus_bp_stops';
         $wbtm_bus_start_time_meta_key   = 'wbtm_bus_bp_start_time';
-        $od                             = '';
 
-        // definição Operational day
-        if (empty($od_sunday) && !empty($od_monday))
-        {
-            $od = 'DOM';
-        }
+        # Tratamento do titulo para definição do dia de operação
+        $the_title  = explode('[', $the_title);
+        $the_title  = end($the_title);
+        $the_title  = str_replace(array('[', ']', ','), '', $the_title);
+        $the_title  = explode(' ', $the_title);
+        $the_title  = reset($the_title);
+        $op_day     = $the_title;
 
-        if (empty($od_saturday) && !empty($od_monday))
-        {
-            $od = 'SAB';
-        }
-        
-        if (empty($od_friday) && !empty($od_monday))
-        {
-            $od = 'SAB';
-        }
-
-        if (empty($od) && empty($od_monday))
-        {
-            $od = 'SEG';
-        }
 
         // Tratamento nos nomes das cidades
         $arr_wrong_words            = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
         $arr_correct_words          = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
 
-        $bp_origin_name             = ucwords(strtolower($objExcel[$bus_prefix][$od]['I']['origem_nome']));
+        $bp_origin_name             = ucwords(strtolower($objExcel[$bus_prefix][$op_day]['I']['origem_nome']));
         $bp_origin_name             = str_replace($arr_wrong_words, $arr_correct_words, $bp_origin_name);
 
-        $bp_destiny_name            = ucwords(strtolower($objExcel[$bus_prefix][$od]['V']['origem_nome']));
+        $bp_destiny_name            = ucwords(strtolower($objExcel[$bus_prefix][$op_day]['V']['origem_nome']));
         $bp_destiny_name            = str_replace($arr_wrong_words, $arr_correct_words, $bp_destiny_name);
 
 
         // Tratamento e armazenamento dos horários de partida
-        $bp_start_time              = $objExcel[$bus_prefix][$od]['I']['horarios'];
-        $bp_back_time               = $objExcel[$bus_prefix][$od]['V']['horarios'];
+        $bp_start_time              = $objExcel[$bus_prefix][$op_day]['I']['horarios'];
+        $bp_back_time               = $objExcel[$bus_prefix][$op_day]['V']['horarios'];
 
         $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
         $bp_time_to_save            = array();
+        array_unique($bp_time_to_bus);
         sort($bp_time_to_bus);
 
         // Tratamento e armazenamento dos horários de chegada
-        $start_arrival_time         = $objExcel[$bus_prefix][$od]['I']['horarios_chegada'];
-        $back_arrival_time          = $objExcel[$bus_prefix][$od]['V']['horarios_chegada'];
+        $start_arrival_time         = $objExcel[$bus_prefix][$op_day]['I']['horarios_chegada'];
+        $back_arrival_time          = $objExcel[$bus_prefix][$op_day]['V']['horarios_chegada'];
 
         $arrival_time               = array_merge($start_arrival_time, $back_arrival_time);
         $arrival_time_to_save       = array();
+        array_unique($arrival_time);
         sort($arrival_time);
 
         $bus_stops = array();
@@ -493,8 +474,7 @@ function update_bp_and_schedules($ids, $objExcel)
 
         }
 
-        // print_r($bus_stops);
-        $str_bp_stops = implode(',', $bus_stops);
+        # Update nas informações do post
         update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
         update_post_meta($id, 'wbtm_bus_next_stops', $arrival_time_to_save);
         wp_set_object_terms($id, $bus_stops, 'wbtm_bus_stops');
