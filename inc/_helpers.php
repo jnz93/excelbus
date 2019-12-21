@@ -192,7 +192,8 @@ function check_operational_days($objExcel, $prefix, $day)
     }
 
     // $week_days = array('DOM','SEG','TER','QUA','QUI','SEX','SAB');
-    $curr_day = $objExcel[$prefix][$day];
+    $curr_day               = $objExcel[$prefix][$day];
+    // $curr_day_first_hour    = $objExcel[$prefix][$day]['I']['horarios'][0];
 
     if (empty($curr_day) || $curr_day == '')
     {
@@ -303,18 +304,12 @@ function check_group_of_working($prefix, $obj)
         if (empty($od)){
 
             $curr_day_bp_start_hours    = $boarding_hours_per_day[$day]; # Arr de horarios do dia atual            
-            // $curr_day_bp_start_hours    = array_unique($curr_day_bp_start_hours); # Elimina valores duplicados
-            // sort($curr_day_bp_start_hours); # Ordenação do menor para o maior
-            
             # Baseado no $day compara os horarios de operação com todos os outros dias
             foreach ($week_for_compare as $day_for_compare)
             {
                 if ($day_for_compare != $day)
                 {
                     $hours = $boarding_hours_per_day[$day_for_compare]; # Coleta os horários do dia para comparação
-                    // $hours = array_unique($hours); # Elimina valores duplicados
-                    // sort($hours); # Ordenação do menor para o maior
-
                     if (check_identical_bp_hours($curr_day_bp_start_hours, $hours)) 
                     {
                         if (!in_array($day, $days_with_same_hours))
@@ -346,12 +341,11 @@ function check_group_of_working($prefix, $obj)
     $arr_setup_vehicle[1]['od'] = $days_with_diferent_hours;
 
     # -> LOGS
-     echo 'Veículo ' . $prefix . ' Opera nos mesmos horários nos dias: <br><pre>';
-     print_r($days_with_same_hours);
-     echo '</pre><br>';
-     echo 'E opera me horários distintos nos dias: <br><pre>';
-     print_r($days_with_diferent_hours);
-     echo '</pre><br>';
+    // echo 'Veículo ' . $prefix . ' - Configurações de operação: <br><pre>';
+    // print_r($arr_setup_vehicle);
+    // echo '</pre><br>';
+    
+    return $arr_setup_vehicle;
 }
 
 
@@ -423,27 +417,26 @@ function update_bp_and_schedules($ids, $objExcel)
         $od                             = '';
 
         // definição Operational day
-        if ($od_sunday == "yes")
+        if (empty($od_sunday) && !empty($od_monday))
         {
-            $od = "DOM";
+            $od = 'DOM';
         }
-        else if($od_monday == "yes" && $od_tuesday == "yes" && $od_wednesday == "yes" && $od_thursday == "yes" && $od_friday == "yes")
+
+        if (empty($od_saturday) && !empty($od_monday))
         {
-            $od = "SEG";
-        }
-        else if ($od_saturday == "yes")
-        {
-            $od = "SAB";
-        }
-        else if ($od_friday == "yes")
-        {
-            $od = "SEX";
-        }
-        else
-        {
-            $od = "SEG";
+            $od = 'SAB';
         }
         
+        if (empty($od_friday) && !empty($od_monday))
+        {
+            $od = 'SAB';
+        }
+
+        if (empty($od) && empty($od_monday))
+        {
+            $od = 'SEG';
+        }
+
         // Tratamento nos nomes das cidades
         $arr_wrong_words            = array('Sao', 'Joao', 'Jose', 'Guacu', 'Aguai', 'Sp');
         $arr_correct_words          = array('São', 'João', 'José', 'Guaçu', 'Aguaí', 'SP');
@@ -461,7 +454,7 @@ function update_bp_and_schedules($ids, $objExcel)
 
         $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
         $bp_time_to_save            = array();
-        asort($bp_time_to_bus);
+        sort($bp_time_to_bus);
 
         // Tratamento e armazenamento dos horários de chegada
         $start_arrival_time         = $objExcel[$bus_prefix][$od]['I']['horarios_chegada'];
@@ -469,39 +462,42 @@ function update_bp_and_schedules($ids, $objExcel)
 
         $arrival_time               = array_merge($start_arrival_time, $back_arrival_time);
         $arrival_time_to_save       = array();
-        asort($arrival_time);
+        sort($arrival_time);
 
-
+        $bus_stops = array();
         for ($i = 0; $i < count($bp_time_to_bus); $i++)
         {
-            $prev_index     = ($i - 1);
             $time           = $bp_time_to_bus[$i];
             $time_stop      = $arrival_time[$i];
 
-            $curr_time_toArr    = explode(':', $time);
-
-            $prev_time          = $bp_time_to_bus[$prev_index];
-            $prev_time_toArr    = explode(':', $prev_time);
-
-            $check_duplicated   = check_duplicated_time_to_bus($curr_time_toArr, $prev_time_toArr);
-            if ($check_duplicated == true)
+            if (($i % 2) == 0)
             {
-                if (($i % 2) == 0)
-                {
-                    $bp_time_to_save[]      = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time];
-                    $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_destiny_name, 'wbtm_bus_next_end_time' => $time_stop];
-                }
-                else
-                {
-                    $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
-                    $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_origin_name, 'wbtm_bus_next_end_time' => $time_stop];
-                }
+                $bp_time_to_save[]      = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time];
+                $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_destiny_name, 'wbtm_bus_next_end_time' => $time_stop];
+            }
+            else
+            {
+                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
+                $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_origin_name, 'wbtm_bus_next_end_time' => $time_stop];
+            }
+
+            if (!in_array($bp_origin_name, $bus_stops))
+            {
+                $bus_stops[] = $bp_origin_name;
+            }
+
+            if (!in_array($bp_destiny_name, $bus_stops))
+            {
+                $bus_stops[] = $bp_destiny_name;
             }
 
         }
 
+        // print_r($bus_stops);
+        $str_bp_stops = implode(',', $bus_stops);
         update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
         update_post_meta($id, 'wbtm_bus_next_stops', $arrival_time_to_save);
+        wp_set_object_terms($id, $bus_stops, 'wbtm_bus_stops');
     }
 
 }
@@ -536,59 +532,11 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
         // Se exister dias de operação em dias iguais
         if (!empty($arr_od))
         {
-            $od_sunday      = 'yes';
-            $od_monday      = 'yes';
-            $od_tuesday     = 'yes';
-            $od_wednesday   = 'yes';
-            $od_thursday    = 'yes';
-            $od_friday      = 'yes';
-            $od_saturday    = 'yes';
     
-            // Marca os dias de operação corretamente
-            for ($i = 0; $i < count($days_week); $i++)
-            {
-                if ($days_week[$i] == 'DOM' && in_array($days_week[$i], $arr_od))
-                {
-                    $od_sunday = '';
-                }
-                
-                if ($days_week[$i] == 'SEG' && in_array($days_week[$i], $arr_od))
-                {
-
-            $od_sunday      = check_operational_days($objExcel, $prefix, 'DOM');
-            $od_monday      = check_operational_days($objExcel, $prefix, 'SEG');
-            $od_tuesday     = check_operational_days($objExcel, $prefix, 'TER');
-            $od_wednesday   = check_operational_days($objExcel, $prefix, 'QUA');
-            $od_thursday    = check_operational_days($objExcel, $prefix, 'QUI');
-            $od_friday      = check_operational_days($objExcel, $prefix, 'SEX');
-            $od_saturday    = check_operational_days($objExcel, $prefix, 'SAB');
-    
-            // Extração dos prefixos que operam aos domingos
-            if ($od_sunday == 'yes')
-            {
-                $sunday_prefix[] = $prefix;
-            }
-            
-            // Definição do título
-            if ($od_monday == 'yes' && $od_saturday == 'yes')
-            {
-                $od_for_title = '[SEG~SAB]';
-            }
-            else if ($od_monday == '' && $od_friday == 'yes')
-            {
-                $od_for_title = '[SEX]';
-            }
-            else
-            {
-                $od_for_title = '[SEG~SEX]';
-            }
-    
-            // Construção do novo post
-            $title = 'Convencional - ' . $prefix . ' ' . $od_for_title;
             $post_arr = array(
                 'post_title'    => $title,
                 'post_content'  => '',
-                'post_status'   => 'publish',
+                'post_status'   => 'draft',
                 'post_type'     => 'wbtm_bus',
                 'post_author'   => get_current_user_id(),
                 'tax_input'     => array(
@@ -596,22 +544,19 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
                 ),
                 'meta_input'    => array(
                     'wbtm_bus_no'   => $prefix,
-                    'od_Sun'        => $od_sunday,
-                    'od_Mon'        => $od_monday,
-                    'od_Tue'        => $od_tuesday,
-                    'od_Wed'        => $od_wednesday,
-                    'od_Thu'        => $od_thursday,
-                    'od_Fri'        => $od_friday,
-                    'od_Sat'        => $od_saturday,
                 ),
             );
             $new_post_id = wp_insert_post($post_arr);
             
+            $update_post = array(
+                'ID'            => $new_post_id,
+                'post_status'   => 'publish',
+            );
+
             if(!is_wp_error($new_post_id))
             {
-                // echo 'Semana: <br>';
-                // echo '<li>'. $title .' <a href="'. get_edit_post_link($new_post_id) .'" target="_blank">Ver</a> </li>';
                 $ids_week_to_update[] = $new_post_id;
+                wp_update_post($update_post);
             }
             else{
                 echo $new_post_id->get_error_message();
@@ -626,56 +571,11 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
         {
             foreach($arr_od2 as $day)
             {
-
-                $od_sunday      = 'yes';
-                $od_monday      = 'yes';
-                $od_tuesday     = 'yes';
-                $od_wednesday   = 'yes';
-                $od_thursday    = 'yes';
-                $od_friday      = 'yes';
-                $od_saturday    = 'yes';
-        
-                // Marca os dias de operação corretamente
-                if ($day == 'DOM')
-                {
-                    $od_sunday = '';
-                }
-                
-                if ($day == 'SEG')
-                {
-                    $od_monday = '';
-                }
-    
-                if ($day == 'TER')
-                {
-                    $od_tuesday = '';
-                }
-                
-                if ($day == 'QUA')
-                {
-                    $od_wednesday = '';
-                }
-    
-                if ($day == 'QUI')
-                {
-                    $od_thursday = '';
-                }
-                
-                if ($day == 'SEX')
-                {
-                    $od_friday = '';
-                }
-                
-                if ($day == 'SAB')
-                {
-                    $od_saturday = '';
-                }
-
                 $title2 = 'Convencional - ' . $prefix . ' [' . $day . ']';
                 $post_arr = array(
                     'post_title'    => $title2,
                     'post_content'  => '',
-                    'post_status'   => 'publish',
+                    'post_status'   => 'draft',
                     'post_type'     => 'wbtm_bus',
                     'post_author'   => get_current_user_id(),
                     'tax_input'     => array(
@@ -683,20 +583,18 @@ function publish_vehicle_by_prefix($list_prefix, $objExcel)
                     ),
                     'meta_input'    => array(
                         'wbtm_bus_no'   => $prefix,
-                        'od_Sun'        => $od_sunday,
-                        'od_Mon'        => $od_monday,
-                        'od_Tue'        => $od_tuesday,
-                        'od_Wed'        => $od_wednesday,
-                        'od_Thu'        => $od_thursday,
-                        'od_Fri'        => $od_friday,
-                        'od_Sat'        => $od_saturday,
                     ),
                 );
                 $new_post_id = wp_insert_post($post_arr);
                 
+                $update_post = array(
+                    'ID'            => $new_post_id,
+                    'post_status'   => 'publish'
+                );
                 if(!is_wp_error($new_post_id))
                 {
                     $ids_sundays_to_update[] = $new_post_id;
+                    wp_update_post($update_post);
                 }
                 else{
                     echo $new_post_id->get_error_message();
