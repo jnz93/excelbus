@@ -412,8 +412,7 @@ function update_bp_and_schedules($ids, $objExcel)
         $the_title  = end($the_title);
         $the_title  = str_replace(array('[', ']', ','), '', $the_title);
         $the_title  = explode(' ', $the_title);
-        $the_title  = reset($the_title);
-        $op_day     = $the_title;
+        $op_day  = reset($the_title);
 
 
         // Tratamento nos nomes das cidades
@@ -427,55 +426,75 @@ function update_bp_and_schedules($ids, $objExcel)
         $bp_destiny_name            = str_replace($arr_wrong_words, $arr_correct_words, $bp_destiny_name);
 
 
-        // Tratamento e armazenamento dos horários de partida
+        // Tratamento e armazenamento dos horários de ida e volta
         $bp_start_time              = $objExcel[$bus_prefix][$op_day]['I']['horarios'];
         $bp_back_time               = $objExcel[$bus_prefix][$op_day]['V']['horarios'];
 
-        $bp_time_to_bus             = array_merge($bp_start_time, $bp_back_time);
-        $bp_time_to_save            = array();
-        array_unique($bp_time_to_bus);
-        sort($bp_time_to_bus);
+        # Junção de horários de partida com o respectivo destino
+        $unify_bp_start_time_with_destiny   = array();
+        $unify_bp_back_time_with_destiny    = array();
+        foreach($bp_start_time as $time)
+        {
+            $unify_bp_start_time_with_destiny[$time] = $bp_origin_name;
+        }
+        # Junção de horários de volta com o respectivo destino
+        foreach($bp_back_time as $time)
+        {
+            $unify_bp_back_time_with_destiny[$time] = $bp_destiny_name;
+        }
+
+        # Merge e ordenação dos horários de partida
+        $unify_bp_time_with_destiny = array_merge($unify_bp_start_time_with_destiny, $unify_bp_back_time_with_destiny);
+        ksort($unify_bp_time_with_destiny);
+
+        # Horários de partida para publicação
+        $bp_time_to_update          = array();
+        foreach($unify_bp_time_with_destiny as $time => $destiny)
+        {
+            $bp_time_to_update[]    = ['wbtm_bus_bp_stops_name' => $destiny, 'wbtm_bus_bp_start_time' => $time];
+        }
 
         // Tratamento e armazenamento dos horários de chegada
         $start_arrival_time         = $objExcel[$bus_prefix][$op_day]['I']['horarios_chegada'];
         $back_arrival_time          = $objExcel[$bus_prefix][$op_day]['V']['horarios_chegada'];
 
-        $arrival_time               = array_merge($start_arrival_time, $back_arrival_time);
-        $arrival_time_to_save       = array();
-        array_unique($arrival_time);
-        sort($arrival_time);
-
-        $bus_stops = array();
-        for ($i = 0; $i < count($bp_time_to_bus); $i++)
+        # Junção dos horários de chegada com o respectivo destino
+        $unify_arrival_start_with_destiny = array();
+        $unify_arrival_back_with_destiny = array();
+        foreach ($start_arrival_time as $time)
         {
-            $time           = $bp_time_to_bus[$i];
-            $time_stop      = $arrival_time[$i];
+            $unify_arrival_start_with_destiny[$time] = $bp_destiny_name;
+        }
+        
+        foreach ($back_arrival_time as $time)
+        {
+            $unify_arrival_back_with_destiny[$time] = $bp_origin_name;
+        }
 
-            if (($i % 2) == 0)
-            {
-                $bp_time_to_save[]      = ['wbtm_bus_bp_stops_name' => $bp_origin_name, 'wbtm_bus_bp_start_time' => $time];
-                $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_destiny_name, 'wbtm_bus_next_end_time' => $time_stop];
-            }
-            else
-            {
-                $bp_time_to_save[] = ['wbtm_bus_bp_stops_name' => $bp_destiny_name, 'wbtm_bus_bp_start_time' => $time];
-                $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $bp_origin_name, 'wbtm_bus_next_end_time' => $time_stop];
-            }
+        $unify_arrival_time_with_destiny = array_merge($unify_arrival_start_with_destiny, $unify_arrival_back_with_destiny);
+        ksort($unify_arrival_time_with_destiny);
 
-            if (!in_array($bp_origin_name, $bus_stops))
-            {
-                $bus_stops[] = $bp_origin_name;
-            }
+        # Horários de chegada
+        $arrival_time_to_save       = array();
+        foreach($unify_arrival_time_with_destiny as $time => $destiny)
+        {
+            $arrival_time_to_save[] = ['wbtm_bus_next_stops_name' => $destiny, 'wbtm_bus_next_end_time' => $time];
+        }
 
-            if (!in_array($bp_destiny_name, $bus_stops))
-            {
-                $bus_stops[] = $bp_destiny_name;
-            }
+        # Origem e chegada para atualizar 'wbtm_bus_stops'
+        $bus_stops = array();
+        if (!in_array($bp_origin_name, $bus_stops))
+        {
+            $bus_stops[] = $bp_origin_name;
+        }
 
+        if (!in_array($bp_destiny_name, $bus_stops))
+        {
+            $bus_stops[] = $bp_destiny_name;
         }
 
         # Update nas informações do post
-        update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_save);
+        update_post_meta($id, 'wbtm_bus_bp_stops', $bp_time_to_update);
         update_post_meta($id, 'wbtm_bus_next_stops', $arrival_time_to_save);
         wp_set_object_terms($id, $bus_stops, 'wbtm_bus_stops');
     }
